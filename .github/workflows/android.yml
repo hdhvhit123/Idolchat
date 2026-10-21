@@ -24,10 +24,10 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
 
       - name: Unit tests (core + Robolectric)
-        run: ./gradlew :core:test :app:testDebugUnitTest --stacktrace
+        run: ./gradlew :core:test :app:testDebugUnitTest 
 
       - name: Assemble debug & release APK
-        run: ./gradlew :app:assembleDebug :app:assembleRelease --stacktrace
+        run: ./gradlew :app:assembleDebug :app:assembleRelease 
 
       - name: Android lint
         run: ./gradlew :app:lintDebug

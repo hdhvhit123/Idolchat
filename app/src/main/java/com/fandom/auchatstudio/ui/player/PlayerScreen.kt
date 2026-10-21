@@ -10,8 +10,7 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -54,7 +53,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -109,13 +108,10 @@ fun PlayerContent(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(style.background))
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-                role = Role.Button,
-                onClickLabel = "Xem tin nhắn tiếp theo",
-                onClick = onTap,
-            )
+            // Tap anywhere to advance. Not `clickable`, which would merge every bubble and
+            // button into one accessibility node.
+            .pointerInput(onTap) { detectTapGestures(onTap = { onTap() }) }
+            .semantics { onClick(label = "Xem tin nhắn tiếp theo") { onTap(); true } }
             .testTag("player_surface"),
     ) {
         Column(Modifier.fillMaxSize()) {
