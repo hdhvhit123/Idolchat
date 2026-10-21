@@ -10,7 +10,6 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -126,7 +125,7 @@ class AppFlowTest {
         val newTitle = "Mới ${UUID.randomUUID().toString().take(4)}"
         rule.onNodeWithTag("fab_new_story").performClick()
         rule.onNodeWithTag("new_story_title").performTextInput(newTitle)
-        rule.onNodeWithText("Weverse DM").performScrollTo().performClick()
+        rule.onNodeWithText("Weverse DM").performClick()
         rule.onNodeWithTag("new_story_confirm").performClick()
         rule.waitUntilAtLeastOneExists(hasText("Studio · Weverse DM"), 10_000)
         rule.onNodeWithText(newTitle).assertIsDisplayed()

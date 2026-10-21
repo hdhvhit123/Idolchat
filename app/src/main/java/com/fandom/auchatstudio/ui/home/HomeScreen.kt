@@ -15,8 +15,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.selection.selectable
@@ -380,7 +378,7 @@ fun NewStoryDialog(onDismiss: () -> Unit, onCreate: (String, ThemePreset) -> Uni
         onDismissRequest = onDismiss,
         title = { Text("Kịch bản mới") },
         text = {
-            Column(Modifier.verticalScroll(rememberScrollState())) {
+            Column {
                 OutlinedTextField(
                     value = title,
                     onValueChange = { if (it.length <= NameRules.MAX_TITLE_LENGTH) title = it },
