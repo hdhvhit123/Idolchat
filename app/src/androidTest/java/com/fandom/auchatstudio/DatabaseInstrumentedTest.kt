@@ -30,7 +30,7 @@ class DatabaseInstrumentedTest {
     fun tearDown() = db.close()
 
     @Test
-    fun foreignKeysCascadeOnDelete() = runBlocking {
+    fun foreignKeysCascadeOnDelete() = runBlocking<Unit> {
         val c = db.characterDao().insert(CharacterEntity(name = "A", roleColorHex = 0xFFFF6584))
         val s = db.storyDao().insert(StoryEntity(title = "S", theme = ThemePreset.INSTAGRAM_DM))
         db.messageDao().insert(MessageEntity(storyId = s, characterId = c, text = "x", position = 0))
@@ -44,7 +44,7 @@ class DatabaseInstrumentedTest {
     }
 
     @Test
-    fun enumsAndUnicodeRoundTrip() = runBlocking {
+    fun enumsAndUnicodeRoundTrip() = runBlocking<Unit> {
         val s = db.storyDao().insert(StoryEntity(title = "Hẹn hò 💜 bí mật", theme = ThemePreset.WEVERSE_DM))
         val story = db.storyDao().observe(s).first()!!
         assertThat(story.title).isEqualTo("Hẹn hò 💜 bí mật")

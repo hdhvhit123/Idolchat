@@ -19,7 +19,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class ExporterInstrumentedTest {
     @Test
-    fun exportWritesReadablePngToGallery() = runBlocking {
+    fun exportWritesReadablePngToGallery() = runBlocking<Unit> {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val idol = CharacterEntity(id = 1, name = "Minho", roleColorHex = 0xFFFF6584)
         val me = CharacterEntity(id = 2, name = "Y/N", roleColorHex = 0xFF43D8C9, isUser = true)

@@ -30,7 +30,7 @@ app/    data (Room, FileStore), ui (home, characters, studio, player, chat), exp
 
 ## Build
 
-Yêu cầu JDK 17 và Android SDK 36 (Android Studio bản mới).
+Yêu cầu JDK 21 (Robolectric cho SDK 36 cần Java 21) và Android SDK 36 (Android Studio bản mới).
 
 ```bash
 ./gradlew :core:test :app:testDebugUnitTest   # unit test + Robolectric

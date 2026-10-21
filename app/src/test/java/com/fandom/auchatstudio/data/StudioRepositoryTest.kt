@@ -31,7 +31,7 @@ class StudioRepositoryTest {
     fun tearDown() = db.close()
 
     @Test
-    fun seedCreatesSampleCastAndStoryOnlyOnce() = runBlocking {
+    fun seedCreatesSampleCastAndStoryOnlyOnce() = runBlocking<Unit> {
         repo.seedIfEmpty()
         repo.seedIfEmpty()
         val characters = repo.characters.first()
@@ -44,7 +44,7 @@ class StudioRepositoryTest {
     }
 
     @Test
-    fun seedSkipsWhenUserAlreadyHasData() = runBlocking {
+    fun seedSkipsWhenUserAlreadyHasData() = runBlocking<Unit> {
         repo.createStory("Của tôi", ThemePreset.WEVERSE_DM)
         repo.seedIfEmpty()
         assertThat(repo.characters.first()).isEmpty()
@@ -52,7 +52,7 @@ class StudioRepositoryTest {
     }
 
     @Test
-    fun messagesGetSequentialPositionsAndNarrationHasNoSpeaker() = runBlocking {
+    fun messagesGetSequentialPositionsAndNarrationHasNoSpeaker() = runBlocking<Unit> {
         val a = repo.saveCharacter(null, "A", 0xFF000000, false, null)
         val story = repo.createStory("S", ThemePreset.LYSN_BUBBLE)
         repo.addMessage(story, a, MessageType.TEXT, "một")
@@ -65,7 +65,7 @@ class StudioRepositoryTest {
     }
 
     @Test
-    fun moveMessageReordersAndKeepsPositionsDense() = runBlocking {
+    fun moveMessageReordersAndKeepsPositionsDense() = runBlocking<Unit> {
         val a = repo.saveCharacter(null, "A", 0xFF000000, false, null)
         val story = repo.createStory("S", ThemePreset.LYSN_BUBBLE)
         listOf("1", "2", "3", "4").forEach { repo.addMessage(story, a, MessageType.TEXT, it) }
@@ -83,7 +83,7 @@ class StudioRepositoryTest {
     }
 
     @Test
-    fun onlyOneCharacterCanBeTheUser() = runBlocking {
+    fun onlyOneCharacterCanBeTheUser() = runBlocking<Unit> {
         val a = repo.saveCharacter(null, "A", 1, true, null)
         val b = repo.saveCharacter(null, "B", 2, true, null)
         val all = repo.characters.first()
@@ -92,7 +92,7 @@ class StudioRepositoryTest {
     }
 
     @Test
-    fun replacingAvatarDeletesTheOldFile() = runBlocking {
+    fun replacingAvatarDeletesTheOldFile() = runBlocking<Unit> {
         val id = repo.saveCharacter(null, "A", 1, false, "/files/old.webp")
         val existing = repo.characters.first().single { it.id == id }
         repo.saveCharacter(existing, "A2", 3, false, "/files/new.webp")
@@ -103,7 +103,7 @@ class StudioRepositoryTest {
     }
 
     @Test
-    fun deletingCharacterCascadesMessagesAndCleansFiles() = runBlocking {
+    fun deletingCharacterCascadesMessagesAndCleansFiles() = runBlocking<Unit> {
         val a = repo.saveCharacter(null, "A", 1, false, "/files/a.webp")
         val b = repo.saveCharacter(null, "B", 2, true, null)
         val story = repo.createStory("S", ThemePreset.LYSN_BUBBLE)
@@ -118,7 +118,7 @@ class StudioRepositoryTest {
     }
 
     @Test
-    fun deletingStoryRemovesMessagesAndImages() = runBlocking {
+    fun deletingStoryRemovesMessagesAndImages() = runBlocking<Unit> {
         val a = repo.saveCharacter(null, "A", 1, false, null)
         val story = repo.createStory("S", ThemePreset.LYSN_BUBBLE)
         repo.addMessage(story, a, MessageType.IMAGE, imagePath = "/files/p.webp")
@@ -129,7 +129,7 @@ class StudioRepositoryTest {
     }
 
     @Test
-    fun summariesAreNewestFirstWithLastMessagePreview() = runBlocking {
+    fun summariesAreNewestFirstWithLastMessagePreview() = runBlocking<Unit> {
         val a = repo.saveCharacter(null, "A", 1, false, null)
         val old = repo.createStory("Cũ", ThemePreset.LYSN_BUBBLE)
         val fresh = repo.createStory("Mới", ThemePreset.INSTAGRAM_DM)
@@ -142,7 +142,7 @@ class StudioRepositoryTest {
     }
 
     @Test
-    fun themeRenameAndChatTitleArePersisted() = runBlocking {
+    fun themeRenameAndChatTitleArePersisted() = runBlocking<Unit> {
         val story = repo.createStory("S", ThemePreset.LYSN_BUBBLE)
         repo.setTheme(story, ThemePreset.WEVERSE_DM)
         repo.renameStory(story, "Tên mới")
@@ -154,7 +154,7 @@ class StudioRepositoryTest {
     }
 
     @Test
-    fun deleteMessageRemovesItsImage() = runBlocking {
+    fun deleteMessageRemovesItsImage() = runBlocking<Unit> {
         val a = repo.saveCharacter(null, "A", 1, false, null)
         val story = repo.createStory("S", ThemePreset.LYSN_BUBBLE)
         repo.addMessage(story, a, MessageType.IMAGE, imagePath = "/files/x.webp")
