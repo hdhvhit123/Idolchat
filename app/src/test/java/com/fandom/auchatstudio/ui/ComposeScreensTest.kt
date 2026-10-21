@@ -27,10 +27,8 @@ import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.robolectric.annotation.Config
 
 @RunWith(AndroidJUnit4::class)
-@Config(qualifiers = "w411dp-h891dp-xxhdpi")
 class ComposeScreensTest {
     @get:Rule
     val rule = createComposeRule()
@@ -56,9 +54,9 @@ class ComposeScreensTest {
         rule.onNodeWithText("Chưa có kịch bản nào").assertIsDisplayed()
         rule.onNodeWithTag("fab_new_story").performClick()
         rule.onNodeWithTag("new_story_title").performTextInput("Concert")
-        rule.onNodeWithText("Instagram DM").performClick()
+        rule.onNodeWithText("Weverse DM").performClick()
         rule.onNodeWithTag("new_story_confirm").performClick()
-        assertThat(created).isEqualTo("Concert" to ThemePreset.INSTAGRAM_DM)
+        assertThat(created).isEqualTo("Concert" to ThemePreset.WEVERSE_DM)
     }
 
     @Test
