@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -19,6 +20,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -33,6 +35,7 @@ import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material.icons.outlined.Mic
 import androidx.compose.material.icons.automirrored.outlined.Notes
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.AssistChip
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
@@ -48,8 +51,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -72,6 +77,7 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.fandom.auchatstudio.core.MessageType
+import com.fandom.auchatstudio.core.NarrationPresets
 import com.fandom.auchatstudio.core.VoiceFormat
 import com.fandom.auchatstudio.data.CharacterEntity
 import com.fandom.auchatstudio.data.MessageEntity
@@ -91,6 +97,7 @@ fun Composer(
     onVoice: () -> Unit,
     onAddCharacter: () -> Unit,
 ) {
+    // Saved across rotation and process death, so a half-typed line is never lost.
     var text by rememberSaveable { mutableStateOf("") }
     val haptics = LocalHapticFeedback.current
     val speakerName = when (speaker) {
@@ -112,6 +119,18 @@ fun Composer(
                 },
                 onAddCharacter = onAddCharacter,
             )
+            if (isNarrator) {
+                // One-tap stage directions: the lines people type most as a narrator.
+                LazyRow(
+                    contentPadding = PaddingValues(horizontal = 12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth().testTag("narration_presets"),
+                ) {
+                    items(NarrationPresets.all, key = { it }) { preset ->
+                        AssistChip(onClick = { onSendText(preset) }, label = { Text(preset) })
+                    }
+                }
+            }
             Row(
                 modifier = Modifier.fillMaxWidth().padding(start = 4.dp, end = 8.dp, bottom = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -127,7 +146,11 @@ fun Composer(
                     onValueChange = { text = it },
                     placeholder = {
                         Text(
-                            if (speakerName.isBlank()) "Thêm nhân vật để bắt đầu" else "Nhắn với tư cách $speakerName…",
+                            when {
+                                speakerName.isBlank() -> "Thêm nhân vật để bắt đầu"
+                                isNarrator -> "Viết lời dẫn truyện…"
+                                else -> "Nhắn với tư cách $speakerName…"
+                            },
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )
@@ -163,8 +186,23 @@ private fun DirectorSwitcher(
     onSelect: (Speaker) -> Unit,
     onAddCharacter: () -> Unit,
 ) {
+    val rowState = rememberLazyListState()
+    // Keep the active speaker on screen: with a long cast it used to end up scrolled out of view.
+    LaunchedEffect(speaker, characters.size) {
+        val index = when (speaker) {
+            is Speaker.Character -> characters.indexOfFirst { it.id == speaker.id }
+            Speaker.Narrator -> characters.size
+            null -> -1
+        }
+        val visible = rowState.layoutInfo.visibleItemsInfo
+        val fullyVisible = visible.any {
+            it.index == index && it.offset >= 0 && it.offset + it.size <= rowState.layoutInfo.viewportEndOffset
+        }
+        if (index >= 0 && !fullyVisible) rowState.animateScrollToItem(index)
+    }
     LazyRow(
-        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+        state = rowState,
+        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 2.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         modifier = Modifier.fillMaxWidth().testTag("director_switcher"),
     ) {
@@ -195,6 +233,8 @@ private fun DirectorSwitcher(
         item(key = "add") {
             SpeakerChip(
                 label = "Thêm",
+                description = "Thêm nhân vật",
+                role = Role.Button,
                 selected = false,
                 accent = accent,
                 onClick = onAddCharacter,
@@ -215,21 +255,26 @@ private fun SpeakerChip(
     selected: Boolean,
     accent: Color,
     onClick: () -> Unit,
+    description: String = "Người nói: $label",
+    role: Role = Role.RadioButton,
     leading: @Composable () -> Unit,
 ) {
     val shape = RoundedCornerShape(50)
     val bg = if (selected) accent.copy(alpha = 0.18f) else MaterialTheme.colorScheme.surfaceContainerHigh
     Row(
         modifier = Modifier
+            // 40dp tall pill inside a 48dp touch target.
+            .minimumInteractiveComponentSize()
+            .heightIn(min = 40.dp)
             .clip(shape)
             .background(bg)
             .border(if (selected) 2.dp else 0.dp, if (selected) accent else Color.Transparent, shape)
-            .clickable(role = Role.RadioButton, onClick = onClick)
+            .clickable(role = role, onClick = onClick)
             .semantics(mergeDescendants = true) {
-                this.selected = selected
-                contentDescription = "Người nói: $label"
+                if (role == Role.RadioButton) this.selected = selected
+                contentDescription = description
             }
-            .padding(start = 4.dp, end = 12.dp, top = 4.dp, bottom = 4.dp),
+            .padding(start = 6.dp, end = 14.dp, top = 4.dp, bottom = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         leading()
@@ -401,7 +446,7 @@ fun VoiceNoteDialog(onDismiss: () -> Unit, onConfirm: (Int) -> Unit) {
     var seconds by remember { mutableFloatStateOf(8f) }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Tin nhắn thoại bí mật") },
+        title = { Text("Tin nhắn thoại") },
         text = {
             Column {
                 Text(

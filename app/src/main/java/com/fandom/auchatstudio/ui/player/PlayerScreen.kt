@@ -9,6 +9,8 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -28,10 +30,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Replay
 import androidx.compose.material.icons.outlined.TouchApp
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
@@ -57,6 +61,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -128,10 +133,26 @@ fun PlayerContent(
                 gapSize = 0.dp,
                 drawStopIndicator = {},
             )
+            Box(Modifier.weight(1f).fillMaxWidth()) {
+            val notStarted = !state.loading && state.playback.total > 0 && state.playback.revealed == 0 && !state.isTyping
+            // Purely visual: it must not take the tap, which belongs to the whole surface.
+            androidx.compose.animation.AnimatedVisibility(
+                visible = notStarted,
+                enter = fadeIn(),
+                exit = fadeOut(tween(150)),
+                modifier = Modifier.align(Alignment.Center),
+            ) {
+                StartHint(
+                    total = state.playback.total,
+                    accent = accent,
+                    onAccent = Color(style.outgoingText),
+                    textColor = Color(style.narrationText),
+                )
+            }
             LazyColumn(
                 state = listState,
                 contentPadding = PaddingValues(vertical = 12.dp),
-                modifier = Modifier.weight(1f).fillMaxWidth().testTag("player_messages"),
+                modifier = Modifier.fillMaxSize().testTag("player_messages"),
             ) {
                 items(state.visible, key = { it.id }) { item ->
                     PopIn {
@@ -149,8 +170,50 @@ fun PlayerContent(
                     }
                 }
             }
+            }
             BottomBar(state = state, accent = accent, onRestart = onRestart, onAutoPlay = onAutoPlay, onBack = onBack)
         }
+    }
+}
+
+/** Fills the otherwise blank first screen and says what to do, without being a button itself. */
+@Composable
+private fun StartHint(total: Int, accent: Color, onAccent: Color, textColor: Color) {
+    val pulse = rememberInfiniteTransition(label = "start")
+    val scale by pulse.animateFloat(
+        initialValue = 1f,
+        targetValue = 1.08f,
+        animationSpec = infiniteRepeatable(tween(900), RepeatMode.Reverse),
+        label = "startScale",
+    )
+    Column(
+        modifier = Modifier.padding(32.dp).testTag("player_start_hint"),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(88.dp)
+                .graphicsLayer {
+                    scaleX = scale
+                    scaleY = scale
+                }
+                .clip(CircleShape)
+                .background(accent.copy(alpha = 0.18f)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Box(Modifier.size(60.dp).clip(CircleShape).background(accent), contentAlignment = Alignment.Center) {
+                Icon(Icons.Outlined.TouchApp, contentDescription = null, tint = onAccent, modifier = Modifier.size(30.dp))
+            }
+        }
+        Spacer(Modifier.height(20.dp))
+        Text("Chạm để bắt đầu", color = textColor, fontWeight = FontWeight.SemiBold, fontSize = 18.sp)
+        Spacer(Modifier.height(4.dp))
+        Text(
+            "$total tin nhắn · mỗi lần chạm hiện một tin",
+            color = textColor.copy(alpha = 0.85f),
+            fontSize = 13.sp,
+            textAlign = TextAlign.Center,
+        )
     }
 }
 
@@ -202,7 +265,14 @@ private fun BottomBar(
             Spacer(Modifier.height(8.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedButton(onClick = onBack) { Text("Thoát", color = Color(style.headerContent)) }
-                FilledTonalButton(onClick = onRestart, modifier = Modifier.testTag("player_restart")) {
+                FilledTonalButton(
+                    onClick = onRestart,
+                    colors = ButtonDefaults.filledTonalButtonColors(
+                        containerColor = accent,
+                        contentColor = Color(style.outgoingText),
+                    ),
+                    modifier = Modifier.testTag("player_restart"),
+                ) {
                     Icon(Icons.Filled.Replay, null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(6.dp))
                     Text("Xem lại")

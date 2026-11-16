@@ -9,6 +9,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToNode
 import androidx.test.espresso.Espresso
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -71,6 +72,9 @@ class ScreenshotTourTest {
     fun lightTour() {
         rule.waitUntilAtLeastOneExists(hasText(SAMPLE_TITLE), 10_000)
         shot("01_home")
+        rule.onNodeWithTag("home_list").performScrollToNode(hasTestTag("cast_strip"))
+        shot("01b_home_scrolled")
+        rule.onNodeWithTag("home_list").performScrollToNode(hasText(SAMPLE_TITLE))
 
         rule.onNodeWithTag("fab_new_story").performClick()
         shot("02_new_story")
@@ -92,6 +96,10 @@ class ScreenshotTourTest {
         rule.onNodeWithTag("composer_input").performClick()
         shot("07_studio_keyboard")
         Espresso.closeSoftKeyboard()
+
+        rule.onNodeWithContentDescription("Người nói: Dẫn truyện").performClick()
+        rule.waitUntilAtLeastOneExists(hasTestTag("narration_presets"), 5_000)
+        shot("07b_studio_narrator")
 
         rule.onNodeWithTag("play_story").performClick()
         rule.waitUntilAtLeastOneExists(hasTestTag("player_surface"), 5_000)

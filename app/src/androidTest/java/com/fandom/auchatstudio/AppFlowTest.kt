@@ -2,6 +2,8 @@ package com.fandom.auchatstudio
 
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
@@ -10,12 +12,14 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.fandom.auchatstudio.core.MessageType
 import com.fandom.auchatstudio.core.ThemePreset
+import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.Before
@@ -80,11 +84,24 @@ class AppFlowTest {
         rule.onNodeWithTag("composer_send").performClick()
         rule.waitUntilAtLeastOneExists(hasText("Ba ngày sau"), 5_000)
 
-        rule.onNodeWithText("Studio · Lysn Bubble").assertIsDisplayed()
+        waitForTheme("Lysn Bubble")
         rule.onNodeWithTag("cycle_theme").performClick()
-        rule.waitUntilAtLeastOneExists(hasText("Studio · Weverse DM"), 5_000)
+        waitForTheme("Weverse DM")
         rule.onNodeWithTag("cycle_theme").performClick()
-        rule.waitUntilAtLeastOneExists(hasText("Studio · Instagram DM"), 5_000)
+        waitForTheme("Instagram DM")
+    }
+
+    @Test
+    fun narratorPresetSendsInOneTap() {
+        openOwnStory()
+        rule.onNodeWithContentDescription("Người nói: Dẫn truyện").performClick()
+        rule.waitUntilAtLeastOneExists(hasTestTag("narration_presets"), 5_000)
+        rule.onNodeWithText("Hôm sau").performClick()
+        rule.waitUntil(5_000) {
+            val messages = runBlocking { app.container.repository.stories.first() }
+                .first { it.story.title == title }
+            messages.messageCount == 4 && messages.lastText == "Hôm sau"
+        }
     }
 
     @Test
@@ -101,6 +118,11 @@ class AppFlowTest {
         rule.waitUntilAtLeastOneExists(hasTestTag("delete_message"), 5_000)
         rule.onNodeWithTag("delete_message").performClick()
         rule.waitUntilDoesNotExist(hasText("Chào anh nha"), 5_000)
+
+        // The delete can be taken back from the snackbar.
+        rule.waitUntilAtLeastOneExists(hasText("Hoàn tác"), 5_000)
+        rule.onNodeWithText("Hoàn tác").performClick()
+        rule.waitUntilAtLeastOneExists(hasText("Chào anh nha"), 5_000)
     }
 
     @Test
@@ -127,8 +149,31 @@ class AppFlowTest {
         rule.onNodeWithTag("new_story_title").performTextInput(newTitle)
         rule.onNodeWithText("Weverse DM").performClick()
         rule.onNodeWithTag("new_story_confirm").performClick()
-        rule.waitUntilAtLeastOneExists(hasText("Studio · Weverse DM"), 10_000)
-        rule.onNodeWithText(newTitle).assertIsDisplayed()
+        waitForTheme("Weverse DM")
+        rule.onNodeWithTag("studio_story_title", useUnmergedTree = true).assertTextEquals(newTitle)
+    }
+
+    @Test
+    fun templateCreatesReadyMadeStoryAndOpensIt() {
+        rule.waitUntilAtLeastOneExists(hasText(title), 10_000)
+        rule.onNodeWithTag("home_list").performScrollToNode(hasTestTag("template_good_night"))
+        rule.onNodeWithTag("template_good_night").performClick()
+        waitForTheme("Lysn Bubble")
+        rule.onNodeWithTag("studio_story_title", useUnmergedTree = true).assertTextEquals("Chúc ngủ ngon")
+        rule.waitUntilAtLeastOneExists(hasText("Ngủ chưa đó?"), 5_000)
+        // A template story is a normal story: it can be played straight away.
+        rule.onNodeWithTag("play_story").assertIsEnabled()
+    }
+
+    @Test
+    fun duplicateStoryFromHomeMenu() {
+        rule.waitUntilAtLeastOneExists(hasText(title), 10_000)
+        rule.onNodeWithContentDescription("Tùy chọn $title").performClick()
+        rule.onNodeWithText("Nhân bản").performClick()
+        rule.waitUntilAtLeastOneExists(hasText("$title (bản sao)"), 10_000)
+        val summaries = runBlocking { app.container.repository.stories.first() }
+        assertThat(summaries.first { it.story.title == "$title (bản sao)" }.messageCount).isEqualTo(3)
+        assertThat(summaries.first { it.story.title == title }.messageCount).isEqualTo(3)
     }
 
     @Test
@@ -140,6 +185,14 @@ class AppFlowTest {
         rule.onNodeWithTag("character_name_field").performTextInput(name)
         rule.onNodeWithTag("character_save").performClick()
         rule.waitUntilAtLeastOneExists(hasContentDescription("Sửa $name"), 5_000)
+    }
+
+    /** The skin name lives inside the tappable header, so it is only visible in the unmerged tree. */
+    private fun waitForTheme(name: String) {
+        rule.waitUntil(10_000) {
+            rule.onAllNodes(hasTestTag("studio_theme_label") and hasText(name), useUnmergedTree = true)
+                .fetchSemanticsNodes().isNotEmpty()
+        }
     }
 
     private fun androidx.compose.ui.test.junit4.ComposeTestRule.onAllNodesWithTagExists(tag: String): Boolean =

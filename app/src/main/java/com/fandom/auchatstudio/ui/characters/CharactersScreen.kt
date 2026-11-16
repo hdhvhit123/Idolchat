@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.background
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -44,7 +43,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -52,6 +51,7 @@ import com.fandom.auchatstudio.data.CharacterEntity
 import com.fandom.auchatstudio.ui.appContainer
 import com.fandom.auchatstudio.ui.components.Avatar
 import com.fandom.auchatstudio.ui.components.ConfirmDialog
+import com.fandom.auchatstudio.ui.components.EmptyState
 
 /** Sentinel for "the dialog is open for a new character". */
 private val NewCharacter = CharacterEntity(id = -1, name = "", roleColorHex = 0)
@@ -78,7 +78,7 @@ fun CharactersScreen(onBack: () -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Dàn nhân vật") },
+                title = { Text("Dàn nhân vật", style = MaterialTheme.typography.titleLarge) },
                 navigationIcon = {
                     IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Quay lại") }
                 },
@@ -108,20 +108,22 @@ fun CharactersScreen(onBack: () -> Unit) {
                 verticalArrangement = Arrangement.spacedBy(10.dp),
                 modifier = Modifier.fillMaxSize(),
             ) {
-                item(key = "hint") {
-                    Text(
-                        "Ứng dụng không kèm ảnh thật của nghệ sĩ. Hãy tự đặt tên và chọn ảnh từ máy cho nhân vật của bạn.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp),
-                    )
-                }
                 if (list.isEmpty()) {
                     item(key = "empty") {
+                        EmptyState(
+                            title = "Chưa có nhân vật nào",
+                            message = "Thêm idol của bạn và một nhân vật \"tôi\" để bắt đầu nhắn tin.",
+                            actionLabel = "Thêm nhân vật",
+                            onAction = { editing = NewCharacter },
+                        )
+                    }
+                } else {
+                    item(key = "hint") {
                         Text(
-                            "Chưa có nhân vật nào. Bấm \"Thêm nhân vật\" để bắt đầu.",
-                            style = MaterialTheme.typography.bodyLarge,
-                            modifier = Modifier.padding(vertical = 24.dp),
+                            "Chạm vào một nhân vật để đổi tên, màu hoặc ảnh. Ảnh lấy từ máy của bạn và chỉ lưu trong máy.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp),
                         )
                     }
                 }
@@ -169,19 +171,39 @@ private fun CharacterRow(character: CharacterEntity, onClick: () -> Unit, modifi
     Card(
         onClick = onClick,
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
+        shape = MaterialTheme.shapes.medium,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
     ) {
         Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-            Avatar(character.name, character.roleColorHex, character.avatarPath, size = 52.dp)
+            Avatar(character.name, character.roleColorHex, character.avatarPath, size = 56.dp)
             Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f)) {
-                Text(character.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        character.name,
+                        style = MaterialTheme.typography.titleMedium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false),
+                    )
+                    if (character.isUser) {
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            "Tôi",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.primaryContainer)
+                                .padding(horizontal = 8.dp, vertical = 2.dp),
+                        )
+                    }
+                }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(Modifier.size(10.dp).clip(CircleShape).background(Color(character.roleColorHex)))
                     Spacer(Modifier.width(6.dp))
                     Text(
-                        if (character.isUser) "Bạn · tin nhắn bên phải" else "Nhân vật · tin nhắn bên trái",
+                        if (character.isUser) "Tin nhắn nằm bên phải" else "Tin nhắn nằm bên trái",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )

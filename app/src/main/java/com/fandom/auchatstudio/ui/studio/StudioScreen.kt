@@ -7,6 +7,23 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.OutlinedButton
+import com.fandom.auchatstudio.ui.theme.AUChatStudioTheme
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
+import com.fandom.auchatstudio.ui.components.SystemBarsForBackground
+import kotlinx.coroutines.launch
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -19,7 +36,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.outlined.Badge
 import androidx.compose.material.icons.outlined.DriveFileRenameOutline
@@ -30,7 +46,6 @@ import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -40,7 +55,6 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -82,20 +96,30 @@ fun StudioScreen(
 
     LaunchedEffect(vm) {
         vm.eventFlow.collect { event ->
-            when (event) {
-                is StudioEvent.Toast -> {
-                    snackbar.currentSnackbarData?.dismiss()
-                    snackbar.showSnackbar(event.message, duration = SnackbarDuration.Short)
-                }
-                is StudioEvent.Exported -> {
-                    val n = event.uris.size
-                    val result = snackbar.showSnackbar(
-                        message = if (n == 1) "Đã lưu ảnh vào Pictures/AU Chat Studio" else "Đã lưu $n ảnh vào Pictures/AU Chat Studio",
-                        actionLabel = "Chia sẻ",
-                        duration = SnackbarDuration.Long,
-                    )
-                    if (result == SnackbarResult.ActionPerformed) {
-                        context.startActivity(Intent.createChooser(shareIntent(event.uris), "Chia sẻ ảnh"))
+            // Each event gets its own coroutine: showSnackbar suspends until the bar is gone, and
+            // handling events one after another used to leave stale messages queued on screen.
+            launch {
+                snackbar.currentSnackbarData?.dismiss()
+                when (event) {
+                    is StudioEvent.Toast -> snackbar.showSnackbar(event.message, duration = SnackbarDuration.Short)
+                    is StudioEvent.MessageDeleted -> {
+                        val result = snackbar.showSnackbar(
+                            message = "Đã xóa tin nhắn",
+                            actionLabel = "Hoàn tác",
+                            duration = SnackbarDuration.Long,
+                        )
+                        if (result == SnackbarResult.ActionPerformed) vm.undoDelete(event.message) else vm.finalizeDelete(event.message)
+                    }
+                    is StudioEvent.Exported -> {
+                        val n = event.uris.size
+                        val result = snackbar.showSnackbar(
+                            message = if (n == 1) "Đã lưu ảnh vào Pictures/AU Chat Studio" else "Đã lưu $n ảnh vào Pictures/AU Chat Studio",
+                            actionLabel = "Chia sẻ",
+                            duration = SnackbarDuration.Long,
+                        )
+                        if (result == SnackbarResult.ActionPerformed) {
+                            context.startActivity(Intent.createChooser(shareIntent(event.uris), "Chia sẻ ảnh"))
+                        }
                     }
                 }
             }
@@ -136,7 +160,6 @@ private fun shareIntent(uris: List<Uri>): Intent {
     return intent
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StudioContent(
     state: StudioUiState,
@@ -175,33 +198,53 @@ fun StudioContent(
     LaunchedEffect(state.items.size) {
         val count = state.items.size
         if (count > 0 && (lastCount == -1 || count > lastCount)) {
-            if (lastCount == -1) listState.scrollToItem(count - 1) else listState.animateScrollToItem(count - 1)
+            // Index `count` is the footer, so the newest message and the footer are both in view.
+            if (lastCount == -1) listState.scrollToItem(count) else listState.animateScrollToItem(count)
         }
         if (!state.loading) lastCount = count
     }
 
+    SystemBarsForBackground(darkBackground = style.isDark)
+
     Scaffold(
+        // The header draws behind the status bar itself; the composer handles the bottom insets.
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text(state.story?.title ?: "", maxLines = 1, overflow = TextOverflow.Ellipsis)
+            ChatHeader(
+                title = state.headerTitle,
+                partners = state.partners,
+                style = style,
+                modifier = Modifier.background(Color(style.headerBackground)).statusBarsPadding(),
+                onBack = onBack,
+                onTitleClick = { editingChatTitle = true },
+                subtitle = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            "Studio · ${style.preset.displayName}",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            state.story?.title ?: "",
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f, fill = false).testTag("studio_story_title"),
+                        )
+                        Text(" · ")
+                        Text(
+                            style.preset.displayName,
+                            maxLines = 1,
+                            modifier = Modifier
+                                .testTag("studio_theme_label")
+                                .semantics { liveRegion = LiveRegionMode.Polite },
                         )
                     }
                 },
-                navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Quay lại") }
-                },
                 actions = {
                     IconButton(onClick = onCycleTheme, modifier = Modifier.testTag("cycle_theme")) {
-                        Icon(Icons.Outlined.Palette, contentDescription = "Đổi phong cách")
+                        Icon(Icons.Outlined.Palette, contentDescription = "Đổi phong cách khung chat")
                     }
                     IconButton(onClick = onPlay, enabled = state.items.isNotEmpty(), modifier = Modifier.testTag("play_story")) {
-                        Icon(Icons.Filled.PlayArrow, contentDescription = "Chế độ Tap-to-Chat")
+                        Icon(
+                            Icons.Filled.PlayArrow,
+                            contentDescription = "Phát kiểu Tap-to-Chat",
+                            tint = if (state.items.isNotEmpty()) Color(style.accent) else LocalContentColor.current.copy(alpha = 0.38f),
+                        )
                     }
                     Box {
                         IconButton(onClick = { menu = true }) { Icon(Icons.Outlined.MoreVert, contentDescription = "Thêm") }
@@ -233,6 +276,9 @@ fun StudioContent(
             )
         },
         bottomBar = {
+            // The composer takes the skin's brightness, so a dark skin is dark from top to bottom
+            // even when the phone is in light mode (and the other way round).
+            AUChatStudioTheme(darkTheme = style.isDark) {
             Composer(
                 characters = state.characters,
                 speaker = state.speaker,
@@ -243,6 +289,7 @@ fun StudioContent(
                 onVoice = { askVoice = true },
                 onAddCharacter = onOpenCharacters,
             )
+            }
         },
         snackbarHost = { SnackbarHost(snackbar) },
     ) { padding ->
@@ -252,10 +299,12 @@ fun StudioContent(
                 .padding(padding)
                 .background(Color(style.background)),
         ) {
-            ChatHeader(title = state.headerTitle, partners = state.partners, style = style)
+            if (state.exporting) {
+                LinearProgressIndicator(Modifier.fillMaxWidth(), color = Color(style.accent))
+            }
             Box(Modifier.weight(1f).fillMaxWidth()) {
                 when {
-                    state.loading -> CircularProgressIndicator(Modifier.align(Alignment.Center))
+                    state.loading -> CircularProgressIndicator(Modifier.align(Alignment.Center), color = Color(style.accent))
                     state.items.isEmpty() -> EmptyChatHint(Color(style.narrationText), Modifier.align(Alignment.Center))
                     else -> LazyColumn(
                         state = listState,
@@ -273,7 +322,14 @@ fun StudioContent(
                                 modifier = Modifier.animateItem(),
                             )
                         }
-                        item(key = "bottom_space") { Spacer(Modifier.height(8.dp)) }
+                        item(key = "footer") {
+                            ScriptFooter(
+                                accent = Color(style.accent),
+                                exporting = state.exporting,
+                                onPlay = onPlay,
+                                onExport = onExport,
+                            )
+                        }
                     }
                 }
             }
@@ -336,6 +392,37 @@ fun StudioContent(
             onDismiss = { editingChatTitle = false },
             onConfirm = { onSetChatTitle(it); editingChatTitle = false },
         )
+    }
+}
+
+/**
+ * What to do with a finished script, right where the script ends. Shown only in the editor; it
+ * is not part of the chat and never appears in the player or the exported image.
+ */
+@Composable
+private fun ScriptFooter(accent: Color, exporting: Boolean, onPlay: () -> Unit, onExport: () -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+    ) {
+        val colors = ButtonDefaults.outlinedButtonColors(contentColor = accent)
+        val border = BorderStroke(1.dp, accent.copy(alpha = 0.6f))
+        OutlinedButton(onClick = onPlay, colors = colors, border = border, modifier = Modifier.testTag("footer_play")) {
+            Icon(Icons.Filled.PlayArrow, contentDescription = null, modifier = Modifier.size(18.dp))
+            Spacer(Modifier.width(6.dp))
+            Text("Phát thử")
+        }
+        OutlinedButton(
+            onClick = onExport,
+            enabled = !exporting,
+            colors = colors,
+            border = border,
+            modifier = Modifier.testTag("footer_export"),
+        ) {
+            Icon(Icons.Outlined.IosShare, contentDescription = null, modifier = Modifier.size(18.dp))
+            Spacer(Modifier.width(6.dp))
+            Text(if (exporting) "Đang xuất…" else "Xuất ảnh")
+        }
     }
 }
 

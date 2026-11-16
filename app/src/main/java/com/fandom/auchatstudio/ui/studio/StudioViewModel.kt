@@ -52,6 +52,9 @@ data class StudioUiState(
 sealed interface StudioEvent {
     data class Toast(val message: String) : StudioEvent
     data class Exported(val uris: List<Uri>) : StudioEvent
+
+    /** A message was removed; the UI offers an undo and then reports back how it ended. */
+    data class MessageDeleted(val message: MessageEntity) : StudioEvent
 }
 
 class StudioViewModel(
@@ -171,15 +174,36 @@ class StudioViewModel(
         viewModelScope.launch { repository.moveMessage(storyId, index, index + delta) }
     }
 
+    /**
+     * Removes a message but keeps its image file until the undo offer has ended: the UI must
+     * answer the [StudioEvent.MessageDeleted] event with [undoDelete] or [finalizeDelete]. If it
+     * never does (the screen was closed), the start-up orphan cleanup removes the file later.
+     */
     fun delete(message: MessageEntity) {
-        viewModelScope.launch { repository.deleteMessage(message) }
+        viewModelScope.launch {
+            repository.deleteMessage(message, deleteImage = false)
+            events.send(StudioEvent.MessageDeleted(message))
+        }
     }
 
+    fun undoDelete(message: MessageEntity) {
+        viewModelScope.launch {
+            if (!repository.restoreMessage(message)) {
+                repository.discardImage(message.imagePath)
+                toast("Không khôi phục được tin nhắn này")
+            }
+        }
+    }
+
+    fun finalizeDelete(message: MessageEntity) {
+        if (message.imagePath == null) return
+        viewModelScope.launch { repository.discardImage(message.imagePath) }
+    }
+
+    /** One-tap skin switcher. The header shows the new skin's name, so no toast is needed. */
     fun cycleTheme() {
         val story = state.value.story ?: return
-        val next = story.theme.next()
-        viewModelScope.launch { repository.setTheme(storyId, next) }
-        toast("Phong cách: ${next.displayName}")
+        viewModelScope.launch { repository.setTheme(storyId, story.theme.next()) }
     }
 
     fun rename(title: String) {
