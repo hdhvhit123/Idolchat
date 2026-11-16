@@ -71,6 +71,7 @@ import com.fandom.auchatstudio.ui.chat.ChatHeader
 import com.fandom.auchatstudio.ui.chat.ChatMessageRow
 import com.fandom.auchatstudio.ui.chat.TypingIndicatorRow
 import com.fandom.auchatstudio.ui.components.SystemBarsForBackground
+import com.fandom.auchatstudio.ui.theme.AUChatStudioTheme
 
 @Composable
 fun PlayerScreen(storyId: Long, onBack: () -> Unit) {
@@ -171,7 +172,11 @@ fun PlayerContent(
                 }
             }
             }
-            BottomBar(state = state, accent = accent, onRestart = onRestart, onAutoPlay = onAutoPlay, onBack = onBack)
+            // Material controls here (the auto-play switch) follow the skin, not the phone's
+            // light/dark setting, like the composer in the studio.
+            AUChatStudioTheme(darkTheme = style.isDark) {
+                BottomBar(state = state, accent = accent, onRestart = onRestart, onAutoPlay = onAutoPlay, onBack = onBack)
+            }
         }
     }
 }
