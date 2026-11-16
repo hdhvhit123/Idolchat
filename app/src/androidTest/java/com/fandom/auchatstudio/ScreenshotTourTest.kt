@@ -2,6 +2,7 @@ package com.fandom.auchatstudio
 
 import android.graphics.Bitmap
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -63,19 +64,25 @@ class ScreenshotTourTest {
         Thread.sleep(1_500)
     }
 
+    private fun waitForHome() = rule.waitUntilAtLeastOneExists(hasTestTag("home_list"), 10_000)
+
+    /**
+     * The sample is the "continue" card on a fresh install, but when other tests ran first it sits
+     * further down the lazy list and is not composed until scrolled to.
+     */
     private fun openSampleStory() {
-        rule.waitUntilAtLeastOneExists(hasText(SAMPLE_TITLE), 10_000)
+        waitForHome()
+        rule.onNodeWithTag("home_list").performScrollToNode(hasText(SAMPLE_TITLE))
         rule.onNodeWithText(SAMPLE_TITLE).performClick()
         rule.waitUntilAtLeastOneExists(hasText("Còn thức không đó?"), 10_000)
     }
 
     @Test
     fun lightTour() {
-        rule.waitUntilAtLeastOneExists(hasText(SAMPLE_TITLE), 10_000)
+        waitForHome()
         shot("01_home")
         rule.onNodeWithTag("home_list").performScrollToNode(hasTestTag("cast_strip"))
         shot("01b_home_scrolled")
-        rule.onNodeWithTag("home_list").performScrollToNode(hasText(SAMPLE_TITLE))
 
         rule.onNodeWithTag("fab_new_story").performClick()
         shot("02_new_story")
@@ -98,6 +105,8 @@ class ScreenshotTourTest {
         shot("07_studio_keyboard")
         Espresso.closeSoftKeyboard()
 
+        // With a long cast the narrator chip is off screen and not composed yet.
+        rule.onNodeWithTag("director_switcher").performScrollToNode(hasContentDescription("Người nói: Dẫn truyện"))
         rule.onNodeWithContentDescription("Người nói: Dẫn truyện").performClick()
         rule.waitUntilAtLeastOneExists(hasTestTag("narration_presets"), 5_000)
         shot("07b_studio_narrator")
@@ -133,7 +142,7 @@ class ScreenshotTourTest {
     fun darkTour() {
         shell("cmd uimode night yes")
         try {
-            rule.waitUntilAtLeastOneExists(hasText(SAMPLE_TITLE), 10_000)
+            waitForHome()
             shot("20_home_dark")
             openSampleStory()
             shot("21_studio_dark")

@@ -79,6 +79,8 @@ class AppFlowTest {
         rule.onNodeWithTag("composer_send").performClick()
         rule.waitUntilAtLeastOneExists(hasText("Tin nhắn mới nè"), 5_000)
 
+        // With a long cast the narrator chip is off screen and not composed yet.
+        rule.onNodeWithTag("director_switcher").performScrollToNode(hasContentDescription("Người nói: Dẫn truyện"))
         rule.onNodeWithContentDescription("Người nói: Dẫn truyện").performClick()
         rule.onNodeWithTag("composer_input").performTextInput("Ba ngày sau")
         rule.onNodeWithTag("composer_send").performClick()
@@ -94,6 +96,8 @@ class AppFlowTest {
     @Test
     fun narratorPresetSendsInOneTap() {
         openOwnStory()
+        // With a long cast the narrator chip is off screen and not composed yet.
+        rule.onNodeWithTag("director_switcher").performScrollToNode(hasContentDescription("Người nói: Dẫn truyện"))
         rule.onNodeWithContentDescription("Người nói: Dẫn truyện").performClick()
         rule.waitUntilAtLeastOneExists(hasTestTag("narration_presets"), 5_000)
         rule.onNodeWithText("Hôm sau").performClick()
