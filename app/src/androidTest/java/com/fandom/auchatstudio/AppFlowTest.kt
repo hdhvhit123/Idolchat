@@ -15,6 +15,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
+import androidx.core.view.WindowCompat
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.fandom.auchatstudio.core.MessageType
@@ -139,6 +140,40 @@ class AppFlowTest {
         rule.waitUntilAtLeastOneExists(hasText("Lời dẫn truyện"), 5_000)
     }
 
+    /**
+     * Going from the studio to the player on a dark skin used to end with dark status bar icons
+     * on a dark header: the studio restored the previous appearance after the player had set its
+     * own. Checked at each step of studio -> player -> studio -> home.
+     */
+    @Test
+    fun statusBarIconsFollowTheSkinAcrossScreens() {
+        rule.waitUntilAtLeastOneExists(hasText(title), 10_000)
+        val homeAppearance = lightStatusBarIcons()
+
+        openOwnStory()
+        rule.onNodeWithTag("cycle_theme").performClick()
+        waitForTheme("Weverse DM")
+        rule.waitUntil(5_000) { !lightStatusBarIcons() }
+
+        rule.onNodeWithTag("play_story").performClick()
+        rule.waitUntilAtLeastOneExists(hasTestTag("player_surface"), 5_000)
+        rule.waitUntilDoesNotExist(hasTestTag("composer_input"), 5_000)
+        rule.waitForIdle()
+        assertThat(lightStatusBarIcons()).isFalse()
+
+        pressBack()
+        rule.waitUntilAtLeastOneExists(hasTestTag("composer_input"), 5_000)
+        rule.waitUntilDoesNotExist(hasTestTag("player_surface"), 5_000)
+        rule.waitForIdle()
+        assertThat(lightStatusBarIcons()).isFalse()
+
+        pressBack()
+        rule.waitUntilAtLeastOneExists(hasTestTag("home_list"), 5_000)
+        rule.waitUntilDoesNotExist(hasTestTag("composer_input"), 5_000)
+        rule.waitForIdle()
+        assertThat(lightStatusBarIcons()).isEqualTo(homeAppearance)
+    }
+
     @Test
     fun tapToChatPlaysWholeScript() {
         openOwnStory()
@@ -200,6 +235,18 @@ class AppFlowTest {
         rule.onNodeWithTag("character_save").performClick()
         rule.waitUntilAtLeastOneExists(hasContentDescription("Sửa $name"), 5_000)
     }
+
+    /** True when the status bar draws dark icons, i.e. the app says its background is light. */
+    private fun lightStatusBarIcons(): Boolean {
+        var light = false
+        rule.runOnUiThread {
+            val window = rule.activity.window
+            light = WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars
+        }
+        return light
+    }
+
+    private fun pressBack() = rule.runOnUiThread { rule.activity.onBackPressedDispatcher.onBackPressed() }
 
     /** The skin name lives inside the tappable header, so it is only visible in the unmerged tree. */
     private fun waitForTheme(name: String) {
