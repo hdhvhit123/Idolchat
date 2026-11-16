@@ -48,7 +48,11 @@ jobs:
           profile: pixel_6
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -no-snapshot
-          script: ./gradlew :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.fandom.auchatstudio.ScreenshotTourTest
+          # See android.yml: system "isn't responding" dialogs would cover the screenshots.
+          script: |
+            adb shell settings put global hide_error_dialogs 1
+            adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS
+            ./gradlew :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.fandom.auchatstudio.ScreenshotTourTest
 
       - name: Collect screenshots
         if: always()

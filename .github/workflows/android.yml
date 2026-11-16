@@ -84,7 +84,12 @@ jobs:
           profile: pixel_6
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -no-snapshot
-          script: ./gradlew :app:connectedDebugAndroidTest
+          # A freshly booted CI emulator sometimes shows "Pixel Launcher isn't responding", and
+          # that system dialog takes window focus away from the app under test.
+          script: |
+            adb shell settings put global hide_error_dialogs 1
+            adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS
+            ./gradlew :app:connectedDebugAndroidTest
 
       - name: Upload device test reports
         if: always()

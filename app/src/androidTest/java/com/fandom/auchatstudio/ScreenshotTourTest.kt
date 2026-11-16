@@ -47,6 +47,10 @@ class ScreenshotTourTest {
 
     @Before
     fun seed() {
+        // A system "app isn't responding" dialog on a slow emulator would take window focus,
+        // which Espresso's pressBack needs, and would end up in the screenshots.
+        instrumentation.uiAutomation
+            .executeShellCommand("am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS").close()
         val app = instrumentation.targetContext.applicationContext as AuChatApp
         runBlocking { app.container.repository.seedIfEmpty() }
     }
