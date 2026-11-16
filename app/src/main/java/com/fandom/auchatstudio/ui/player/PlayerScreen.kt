@@ -281,7 +281,7 @@ private fun BottomBar(
         } else {
             val pulse = rememberInfiniteTransition(label = "hint")
             val hintAlpha by pulse.animateFloat(
-                initialValue = 0.45f,
+                initialValue = 0.7f,
                 targetValue = 1f,
                 animationSpec = infiniteRepeatable(tween(900), RepeatMode.Reverse),
                 label = "hintAlpha",

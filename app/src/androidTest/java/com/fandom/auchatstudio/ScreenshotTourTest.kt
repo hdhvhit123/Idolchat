@@ -52,7 +52,8 @@ class ScreenshotTourTest {
 
     private fun shot(name: String) {
         rule.waitForIdle()
-        Thread.sleep(700)
+        // The CI emulator renders in software and presents frames late; give it time to catch up.
+        Thread.sleep(1_500)
         val bitmap: Bitmap = instrumentation.uiAutomation.takeScreenshot() ?: return
         FileOutputStream(File(outputDir, "$name.png")).use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
     }

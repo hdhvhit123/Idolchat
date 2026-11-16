@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.OutlinedButton
 import com.fandom.auchatstudio.ui.theme.AUChatStudioTheme
 import androidx.compose.foundation.layout.Row
@@ -218,7 +220,8 @@ fun StudioContent(
                 onBack = onBack,
                 onTitleClick = { editingChatTitle = true },
                 subtitle = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    // Nothing until the story has loaded, rather than a half-filled line.
+                    if (state.story != null) Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             state.story?.title ?: "",
                             maxLines = 1,
@@ -239,12 +242,20 @@ fun StudioContent(
                     IconButton(onClick = onCycleTheme, modifier = Modifier.testTag("cycle_theme")) {
                         Icon(Icons.Outlined.Palette, contentDescription = "Đổi phong cách khung chat")
                     }
-                    IconButton(onClick = onPlay, enabled = state.items.isNotEmpty(), modifier = Modifier.testTag("play_story")) {
-                        Icon(
-                            Icons.Filled.PlayArrow,
-                            contentDescription = "Phát kiểu Tap-to-Chat",
-                            tint = if (state.items.isNotEmpty()) Color(style.accent) else LocalContentColor.current.copy(alpha = 0.38f),
-                        )
+                    // The one filled action in the header. Icon colour is the skin's "text on
+                    // accent" colour, which is checked for contrast in ThemeContrastTest.
+                    FilledIconButton(
+                        onClick = onPlay,
+                        enabled = state.items.isNotEmpty(),
+                        colors = IconButtonDefaults.filledIconButtonColors(
+                            containerColor = Color(style.accent),
+                            contentColor = Color(style.outgoingText),
+                            disabledContainerColor = Color.Transparent,
+                            disabledContentColor = LocalContentColor.current.copy(alpha = 0.38f),
+                        ),
+                        modifier = Modifier.testTag("play_story"),
+                    ) {
+                        Icon(Icons.Filled.PlayArrow, contentDescription = "Phát kiểu Tap-to-Chat")
                     }
                     Box {
                         IconButton(onClick = { menu = true }) { Icon(Icons.Outlined.MoreVert, contentDescription = "Thêm") }
@@ -278,7 +289,7 @@ fun StudioContent(
         bottomBar = {
             // The composer takes the skin's brightness, so a dark skin is dark from top to bottom
             // even when the phone is in light mode (and the other way round).
-            AUChatStudioTheme(darkTheme = style.isDark) {
+            if (!state.loading) AUChatStudioTheme(darkTheme = style.isDark) {
             Composer(
                 characters = state.characters,
                 speaker = state.speaker,
@@ -325,6 +336,7 @@ fun StudioContent(
                         item(key = "footer") {
                             ScriptFooter(
                                 accent = Color(style.accent),
+                                content = Color(style.narrationText),
                                 exporting = state.exporting,
                                 onPlay = onPlay,
                                 onExport = onExport,
@@ -400,12 +412,13 @@ fun StudioContent(
  * is not part of the chat and never appears in the player or the exported image.
  */
 @Composable
-private fun ScriptFooter(accent: Color, exporting: Boolean, onPlay: () -> Unit, onExport: () -> Unit) {
+private fun ScriptFooter(accent: Color, content: Color, exporting: Boolean, onPlay: () -> Unit, onExport: () -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
     ) {
-        val colors = ButtonDefaults.outlinedButtonColors(contentColor = accent)
+        // Label in the skin's readable secondary text colour; the accent only tints the outline.
+        val colors = ButtonDefaults.outlinedButtonColors(contentColor = content, disabledContentColor = content.copy(alpha = 0.5f))
         val border = BorderStroke(1.dp, accent.copy(alpha = 0.6f))
         OutlinedButton(onClick = onPlay, colors = colors, border = border, modifier = Modifier.testTag("footer_play")) {
             Icon(Icons.Filled.PlayArrow, contentDescription = null, modifier = Modifier.size(18.dp))
