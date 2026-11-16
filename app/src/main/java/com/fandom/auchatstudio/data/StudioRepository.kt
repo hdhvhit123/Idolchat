@@ -4,8 +4,15 @@ import android.net.Uri
 import androidx.room.withTransaction
 import com.fandom.auchatstudio.core.ListOps
 import com.fandom.auchatstudio.core.MessageType
+import com.fandom.auchatstudio.core.NameRules
+import com.fandom.auchatstudio.core.RolePalette
+import com.fandom.auchatstudio.core.StoryTemplate
+import com.fandom.auchatstudio.core.TemplateRole
 import com.fandom.auchatstudio.core.ThemePreset
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 class StudioRepository(
     private val db: AppDatabase,
@@ -21,6 +28,38 @@ class StudioRepository(
 
     fun story(id: Long): Flow<StoryEntity?> = storyDao.observe(id)
     fun messages(storyId: Long): Flow<List<MessageEntity>> = messageDao.observeForStory(storyId)
+
+    private val _ready = MutableStateFlow(false)
+
+    /** False until [initialize] has finished, so the UI can show a loader instead of a false empty state. */
+    val ready: StateFlow<Boolean> = _ready.asStateFlow()
+
+    /**
+     * One-time start-up work. [seedSample] should be true only on the very first launch, so a
+     * user who deliberately deleted everything doesn't get the sample back.
+     */
+    suspend fun initialize(seedSample: Boolean) {
+        try {
+            if (seedSample) seedIfEmpty()
+            cleanupOrphanImages()
+        } finally {
+            _ready.value = true
+        }
+    }
+
+    /**
+     * Deletes stored images that no character or message refers to any more (left behind by a
+     * cancelled undo or an interrupted save). Recent files are skipped in case a save is in flight.
+     * Returns the number of files removed.
+     */
+    suspend fun cleanupOrphanImages(minAgeMillis: Long = ORPHAN_MIN_AGE_MS): Int {
+        val candidates = images.listOlderThan(clock() - minAgeMillis)
+        if (candidates.isEmpty()) return 0
+        val referenced = (characterDao.allAvatarPaths() + messageDao.allImagePaths()).toSet()
+        val orphans = candidates.filterNot { it in referenced }
+        orphans.forEach { images.delete(it) }
+        return orphans.size
+    }
 
     // region Seed
 
@@ -93,6 +132,71 @@ class StudioRepository(
         storyDao.update(story.copy(theme = theme, updatedAt = clock()))
     }
 
+    /** Copies a story and all its messages (with their own image files). Returns the new id. */
+    suspend fun duplicateStory(id: Long): Long? {
+        val story = storyDao.getById(id) ?: return null
+        val messages = messageDao.getForStory(id)
+        // Copy files first: it is slow IO and must not run inside the database transaction.
+        val copies = messages.map { m -> m.imagePath?.let { images.copy(it, "msg_copy") } }
+        val now = clock()
+        return db.withTransaction {
+            val title = (NameRules.normalizeName("${story.title} (bản sao)", NameRules.MAX_TITLE_LENGTH) ?: story.title)
+            val newId = storyDao.insert(story.copy(id = 0, title = title, createdAt = now, updatedAt = now))
+            messageDao.insertAll(
+                messages.mapIndexedNotNull { index, m ->
+                    // An image whose file could not be copied is dropped rather than left dangling.
+                    if (m.type == MessageType.IMAGE && copies[index] == null) {
+                        null
+                    } else {
+                        m.copy(id = 0, storyId = newId, imagePath = copies[index])
+                    }
+                },
+            )
+            newId
+        }
+    }
+
+    /**
+     * Creates a story from a built-in template, mapping its roles onto the user's cast. Missing
+     * roles get a neutral placeholder character the user can rename later.
+     */
+    suspend fun createStoryFromTemplate(template: StoryTemplate): Long = db.withTransaction {
+        val cast = characterDao.getAll().toMutableList()
+        suspend fun create(name: String, isUser: Boolean): CharacterEntity {
+            val color = RolePalette.nextFree(cast.map { it.roleColorHex })
+            val entity = CharacterEntity(name = name, roleColorHex = color, isUser = isUser)
+            return entity.copy(id = characterDao.insert(entity)).also { cast += it }
+        }
+        val roles = template.lines.map { it.role }.toSet()
+        val user = cast.firstOrNull { it.isUser } ?: create("Y/N (Bạn)", isUser = true)
+        val idol = cast.firstOrNull { !it.isUser } ?: create("Idol", isUser = false)
+        val friend = if (TemplateRole.FRIEND in roles) {
+            cast.firstOrNull { !it.isUser && it.id != idol.id } ?: create("Thành viên", isUser = false)
+        } else {
+            idol
+        }
+        val storyId = storyDao.insert(StoryEntity(title = template.title, theme = template.theme, createdAt = clock()))
+        messageDao.insertAll(
+            template.lines.mapIndexed { index, line ->
+                MessageEntity(
+                    storyId = storyId,
+                    characterId = when (line.role) {
+                        TemplateRole.IDOL -> idol.id
+                        TemplateRole.FRIEND -> friend.id
+                        TemplateRole.USER -> user.id
+                        TemplateRole.NARRATOR -> null
+                    },
+                    type = line.type,
+                    text = line.text,
+                    voiceSeconds = line.voiceSeconds,
+                    timeLabel = line.timeLabel,
+                    position = index,
+                )
+            },
+        )
+        storyId
+    }
+
     suspend fun deleteStory(id: Long) {
         val files = messageDao.imagePathsForStory(id)
         storyDao.deleteById(id)
@@ -136,12 +240,28 @@ class StudioRepository(
         }
     }
 
-    suspend fun deleteMessage(message: MessageEntity) {
+    /**
+     * Deletes a message. Pass [deleteImage] = false while an undo is still on offer, then call
+     * [discardImage] (or [restoreMessage]) once the user has decided.
+     */
+    suspend fun deleteMessage(message: MessageEntity, deleteImage: Boolean = true) {
         db.withTransaction {
             messageDao.deleteById(message.id)
             storyDao.touch(message.storyId, clock())
         }
-        images.delete(message.imagePath)
+        if (deleteImage) images.delete(message.imagePath)
+    }
+
+    /** Puts back a message removed with [deleteMessage]; it returns to its old place in the script. */
+    suspend fun restoreMessage(message: MessageEntity): Boolean = db.withTransaction {
+        if (storyDao.getById(message.storyId) == null) return@withTransaction false
+        if (messageDao.getById(message.id) != null) return@withTransaction true
+        // The speaker may have been deleted in the meantime; a dangling id would break the foreign key.
+        val speakerExists = message.characterId?.let { characterDao.getById(it) != null } ?: true
+        if (!speakerExists) return@withTransaction false
+        messageDao.insert(message)
+        storyDao.touch(message.storyId, clock())
+        true
     }
 
     /** Moves a message within its story and rewrites positions so they stay 0..n-1. */
@@ -162,4 +282,8 @@ class StudioRepository(
     suspend fun discardImage(path: String?) = images.delete(path)
 
     // endregion
+
+    private companion object {
+        const val ORPHAN_MIN_AGE_MS = 60 * 60 * 1000L
+    }
 }

@@ -22,6 +22,12 @@ interface ImageStore {
     /** Deletes a file previously returned by [importImage]. Paths outside our folder are ignored. */
     suspend fun delete(path: String?)
 
+    /** Makes an independent copy of a stored image (used when duplicating a story). */
+    suspend fun copy(path: String, prefix: String): String?
+
+    /** Stored images that were last modified before [olderThanMillis] (epoch time). */
+    suspend fun listOlderThan(olderThanMillis: Long): List<String>
+
     companion object {
         const val DEFAULT_MAX_SIZE = 1600
         const val AVATAR_MAX_SIZE = 512
@@ -88,6 +94,27 @@ class FileStore(private val context: Context) : ImageStore {
             val root = context.filesDir.canonicalPath
             if (file.canonicalPath.startsWith(root)) file.delete()
         }
+    }
+
+    override suspend fun copy(path: String, prefix: String): String? = withContext(Dispatchers.IO) {
+        val source = File(path)
+        if (!source.isFile) return@withContext null
+        val extension = source.extension.ifEmpty { "webp" }
+        val target = File(imageDir, "${prefix}_${System.nanoTime()}.$extension")
+        try {
+            source.copyTo(target, overwrite = true)
+            target.absolutePath
+        } catch (e: Exception) {
+            Log.e(TAG, "Could not copy image", e)
+            target.delete()
+            null
+        }
+    }
+
+    override suspend fun listOlderThan(olderThanMillis: Long): List<String> = withContext(Dispatchers.IO) {
+        imageDir.listFiles().orEmpty()
+            .filter { it.isFile && it.lastModified() < olderThanMillis }
+            .map { it.absolutePath }
     }
 
     private companion object {
