@@ -163,9 +163,19 @@ class StudioViewModel(
         }
     }
 
-    fun changeSpeaker(message: MessageEntity, characterId: Long) {
-        if (message.type == MessageType.NARRATION) return
-        viewModelScope.launch { repository.updateMessage(message.copy(characterId = characterId)) }
+    /**
+     * Hands a message to another speaker; `null` means the narrator. Only written lines can
+     * become narration or stop being one: a voice note or a photo always belongs to a character.
+     */
+    fun changeSpeaker(message: MessageEntity, characterId: Long?) {
+        val changed = when {
+            characterId == null ->
+                if (message.type == MessageType.TEXT) message.copy(type = MessageType.NARRATION, characterId = null) else return
+            message.type == MessageType.NARRATION -> message.copy(type = MessageType.TEXT, characterId = characterId)
+            else -> message.copy(characterId = characterId)
+        }
+        if (changed == message) return
+        viewModelScope.launch { repository.updateMessage(changed) }
     }
 
     fun move(message: MessageEntity, delta: Int) {

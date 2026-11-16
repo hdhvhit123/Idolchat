@@ -492,11 +492,8 @@ private fun CastStrip(characters: List<CharacterEntity>, onOpenCharacters: () ->
         horizontalArrangement = Arrangement.spacedBy(Space.sm),
         modifier = Modifier.testTag("cast_strip"),
     ) {
-        items(characters, key = { it.id }) { c ->
-            CastItem(label = c.name, onClick = onOpenCharacters) {
-                Avatar(c.name, c.roleColorHex, c.avatarPath, size = 52.dp)
-            }
-        }
+        // "Thêm" leads the row: at the end it sat under the "Kịch bản mới" button whenever the
+        // cast filled the width of the screen.
         item(key = "add") {
             CastItem(label = "Thêm", onClick = onOpenCharacters) {
                 Box(
@@ -506,6 +503,11 @@ private fun CastStrip(characters: List<CharacterEntity>, onOpenCharacters: () ->
                         .border(1.5.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape),
                     contentAlignment = Alignment.Center,
                 ) { Icon(Icons.Filled.Add, contentDescription = null, tint = MaterialTheme.colorScheme.primary) }
+            }
+        }
+        items(characters, key = { it.id }) { c ->
+            CastItem(label = c.name, onClick = onOpenCharacters) {
+                Avatar(c.name, c.roleColorHex, c.avatarPath, size = 52.dp)
             }
         }
     }

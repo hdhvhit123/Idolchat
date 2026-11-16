@@ -145,6 +145,40 @@ class StudioViewModelTest {
     }
 
     @Test
+    fun writtenLineCanBeHandedToTheNarratorAndBack() = runTest(dispatcher) {
+        val vm = subscribed()
+        vm.sendText("Ba ngày sau")
+        awaitItems(vm, 1)
+
+        vm.changeSpeaker(vm.state.value.items.single().message, null)
+        waitFor(step = { runCurrent() }) { vm.state.value.items.single().isNarration }
+        val narration = vm.state.value.items.single().message
+        assertThat(narration.characterId).isNull()
+        assertThat(narration.text).isEqualTo("Ba ngày sau")
+
+        vm.changeSpeaker(narration, meId)
+        waitFor(step = { runCurrent() }) { !vm.state.value.items.single().isNarration }
+        val line = vm.state.value.items.single()
+        assertThat(line.message.type).isEqualTo(MessageType.TEXT)
+        assertThat(line.message.characterId).isEqualTo(meId)
+        assertThat(line.outgoing).isTrue()
+    }
+
+    @Test
+    fun voiceNoteCannotBecomeNarration() = runTest(dispatcher) {
+        val vm = subscribed()
+        vm.sendVoice(5)
+        awaitItems(vm, 1)
+        val voice = vm.state.value.items.single().message
+
+        vm.changeSpeaker(voice, null)
+        runCurrent()
+        vm.changeSpeaker(voice, meId)
+        waitFor(step = { runCurrent() }) { vm.state.value.items.single().message.characterId == meId }
+        assertThat(vm.state.value.items.single().message.type).isEqualTo(MessageType.VOICE)
+    }
+
+    @Test
     fun cycleThemeRotatesPresets() = runTest(dispatcher) {
         val vm = subscribed()
         vm.cycleTheme()

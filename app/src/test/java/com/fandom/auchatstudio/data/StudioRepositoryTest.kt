@@ -155,6 +155,20 @@ class StudioRepositoryTest {
     }
 
     @Test
+    fun changingTheSkinDoesNotReorderTheHomeList() = runBlocking<Unit> {
+        val a = repo.saveCharacter(null, "A", 1, false, null)
+        val older = repo.createStory("Cũ", ThemePreset.LYSN_BUBBLE)
+        val newer = repo.createStory("Mới", ThemePreset.LYSN_BUBBLE)
+        repo.addMessage(newer, a, MessageType.TEXT, "mới nhất")
+        val before = repo.story(older).first()!!.updatedAt
+
+        repo.setTheme(older, ThemePreset.INSTAGRAM_DM)
+
+        assertThat(repo.story(older).first()!!.updatedAt).isEqualTo(before)
+        assertThat(repo.stories.first().map { it.story.id }).containsExactly(newer, older).inOrder()
+    }
+
+    @Test
     fun deleteMessageRemovesItsImage() = runBlocking<Unit> {
         val a = repo.saveCharacter(null, "A", 1, false, null)
         val story = repo.createStory("S", ThemePreset.LYSN_BUBBLE)

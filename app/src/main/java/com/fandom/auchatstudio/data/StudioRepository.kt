@@ -127,9 +127,13 @@ class StudioRepository(
         storyDao.update(story.copy(chatTitle = chatTitle, updatedAt = clock()))
     }
 
+    /**
+     * Changing the skin does not count as editing the script, so [StoryEntity.updatedAt] stays
+     * as it is and the story keeps its place in the home list.
+     */
     suspend fun setTheme(id: Long, theme: ThemePreset) {
         val story = storyDao.getById(id) ?: return
-        storyDao.update(story.copy(theme = theme, updatedAt = clock()))
+        storyDao.update(story.copy(theme = theme))
     }
 
     /** Copies a story and all its messages (with their own image files). Returns the new id. */

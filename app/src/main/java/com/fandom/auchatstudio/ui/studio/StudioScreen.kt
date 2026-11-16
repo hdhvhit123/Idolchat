@@ -178,7 +178,7 @@ fun StudioContent(
     onSendVoice: (Int) -> Unit,
     onSendImage: (Uri) -> Unit,
     onUpdateMessage: (MessageEntity, String, String, Int) -> Unit,
-    onChangeSpeaker: (MessageEntity, Long) -> Unit,
+    onChangeSpeaker: (MessageEntity, Long?) -> Unit,
     onMove: (MessageEntity, Int) -> Unit,
     onDelete: (MessageEntity) -> Unit,
 ) {
@@ -221,20 +221,22 @@ fun StudioContent(
                 onTitleClick = { editingChatTitle = true },
                 subtitle = {
                     // Nothing until the story has loaded, rather than a half-filled line.
+                    // The skin name comes first and is never cut; the story title takes what is
+                    // left and is cut at the very end of the line, so no gap shows after "…".
                     if (state.story != null) Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            state.story?.title ?: "",
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.weight(1f, fill = false).testTag("studio_story_title"),
-                        )
-                        Text(" · ")
                         Text(
                             style.preset.displayName,
                             maxLines = 1,
                             modifier = Modifier
                                 .testTag("studio_theme_label")
                                 .semantics { liveRegion = LiveRegionMode.Polite },
+                        )
+                        Text(" · ")
+                        Text(
+                            state.story?.title ?: "",
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f, fill = false).testTag("studio_story_title"),
                         )
                     }
                 },

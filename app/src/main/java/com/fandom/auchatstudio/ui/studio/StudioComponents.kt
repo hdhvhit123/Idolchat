@@ -72,6 +72,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextOverflow
@@ -149,7 +150,7 @@ fun Composer(
                             when {
                                 speakerName.isBlank() -> "Thêm nhân vật để bắt đầu"
                                 isNarrator -> "Viết lời dẫn truyện…"
-                                else -> "Nhắn với tư cách $speakerName…"
+                                else -> "$speakerName nói gì?"
                             },
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
@@ -299,7 +300,7 @@ fun MessageActionsSheet(
     canMoveDown: Boolean,
     onDismiss: () -> Unit,
     onEdit: () -> Unit,
-    onChangeSpeaker: (Long) -> Unit,
+    onChangeSpeaker: (Long?) -> Unit,
     onMoveUp: () -> Unit,
     onMoveDown: () -> Unit,
     onDelete: () -> Unit,
@@ -317,7 +318,10 @@ fun MessageActionsSheet(
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
             )
-            if (!item.isNarration && characters.size > 1) {
+            // A written line can be handed to the narrator and back; voice notes and photos can
+            // only move between characters.
+            val canNarrate = item.message.type == MessageType.TEXT || item.isNarration
+            if (characters.isNotEmpty() && (canNarrate || characters.size > 1)) {
                 Text(
                     "Đổi người nói",
                     style = MaterialTheme.typography.labelLarge,
@@ -347,6 +351,36 @@ fun MessageActionsSheet(
                             Spacer(Modifier.height(4.dp))
                             Text(
                                 c.name,
+                                style = MaterialTheme.typography.labelSmall,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.widthIn(max = 64.dp),
+                            )
+                        }
+                    }
+                    if (canNarrate) item(key = "narrator") {
+                        val current = item.isNarration
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(12.dp))
+                                .clickable(enabled = !current) { onChangeSpeaker(null) }
+                                .testTag("speaker_narrator")
+                                .padding(6.dp),
+                        ) {
+                            Box(
+                                Modifier
+                                    .size(44.dp)
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.colorScheme.surfaceContainerHighest)
+                                    .then(
+                                        if (current) Modifier.border(2.dp, MaterialTheme.colorScheme.primary, CircleShape) else Modifier,
+                                    ),
+                                contentAlignment = Alignment.Center,
+                            ) { Icon(Icons.AutoMirrored.Outlined.Notes, null, modifier = Modifier.size(22.dp)) }
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                "Dẫn truyện",
                                 style = MaterialTheme.typography.labelSmall,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
@@ -408,7 +442,7 @@ fun EditMessageDialog(
             Column {
                 if (isVoice) {
                     Text("Độ dài: ${VoiceFormat.format(seconds.roundToInt())}")
-                    Slider(value = seconds, onValueChange = { seconds = it }, valueRange = 1f..120f)
+                    VoiceLengthSlider(seconds) { seconds = it }
                 } else {
                     OutlinedTextField(
                         value = text,
@@ -456,7 +490,7 @@ fun VoiceNoteDialog(onDismiss: () -> Unit, onConfirm: (Int) -> Unit) {
                 )
                 Spacer(Modifier.height(12.dp))
                 Text("Độ dài: ${VoiceFormat.format(seconds.roundToInt())}", style = MaterialTheme.typography.titleMedium)
-                Slider(value = seconds, onValueChange = { seconds = it }, valueRange = 1f..120f)
+                VoiceLengthSlider(seconds) { seconds = it }
             }
         },
         confirmButton = {
@@ -464,4 +498,32 @@ fun VoiceNoteDialog(onDismiss: () -> Unit, onConfirm: (Int) -> Unit) {
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Hủy") } },
     )
+}
+
+private const val VOICE_MIN_SECONDS = 1f
+private const val VOICE_MAX_SECONDS = 120f
+
+/**
+ * Length picker for a voice note. The two ends are labelled so that a short default such as 0:08,
+ * which sits close to the left edge of a two-minute scale, does not read as "nothing chosen".
+ */
+@Composable
+private fun VoiceLengthSlider(seconds: Float, onChange: (Float) -> Unit) {
+    Column {
+        Slider(
+            value = seconds,
+            onValueChange = onChange,
+            valueRange = VOICE_MIN_SECONDS..VOICE_MAX_SECONDS,
+            modifier = Modifier.semantics {
+                contentDescription = "Độ dài tin nhắn thoại"
+                stateDescription = VoiceFormat.format(seconds.roundToInt())
+            },
+        )
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            val style = MaterialTheme.typography.labelSmall
+            val color = MaterialTheme.colorScheme.onSurfaceVariant
+            Text(VoiceFormat.format(VOICE_MIN_SECONDS.toInt()), style = style, color = color)
+            Text(VoiceFormat.format(VOICE_MAX_SECONDS.toInt()), style = style, color = color)
+        }
+    }
 }

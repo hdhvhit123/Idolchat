@@ -130,6 +130,16 @@ class AppFlowTest {
     }
 
     @Test
+    fun handLineToNarratorFromActionSheet() {
+        openOwnStory()
+        rule.onNodeWithText("Chào anh").performClick()
+        rule.waitUntilAtLeastOneExists(hasTestTag("speaker_narrator"), 5_000)
+        rule.onNodeWithTag("speaker_narrator").performClick()
+        // The sheet stays open on the same line, which is now narration.
+        rule.waitUntilAtLeastOneExists(hasText("Lời dẫn truyện"), 5_000)
+    }
+
+    @Test
     fun tapToChatPlaysWholeScript() {
         openOwnStory()
         rule.onNodeWithTag("play_story").performClick()
