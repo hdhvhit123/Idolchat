@@ -52,6 +52,6 @@ class ColorsAndListsTest {
 
     @Test
     fun `watermark text matches the design document`() {
-        assertThat(Watermark.TEXT).isEqualTo("Nội dung hư cấu tạo bởi AU Studio")
+        assertThat(Watermark.TEXT).isEqualTo("Nội dung hư cấu tạo bởi Idol Chat Maker")
     }
 }

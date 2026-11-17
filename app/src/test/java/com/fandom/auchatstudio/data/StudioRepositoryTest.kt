@@ -4,6 +4,7 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.fandom.auchatstudio.FakeImageStore
 import com.fandom.auchatstudio.core.MessageType
+import com.fandom.auchatstudio.core.StoryTemplates
 import com.fandom.auchatstudio.core.ThemePreset
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.flow.first
@@ -154,6 +155,20 @@ class StudioRepositoryTest {
     }
 
     @Test
+    fun changingTheSkinDoesNotReorderTheHomeList() = runBlocking<Unit> {
+        val a = repo.saveCharacter(null, "A", 1, false, null)
+        val older = repo.createStory("Cũ", ThemePreset.LYSN_BUBBLE)
+        val newer = repo.createStory("Mới", ThemePreset.LYSN_BUBBLE)
+        repo.addMessage(newer, a, MessageType.TEXT, "mới nhất")
+        val before = repo.story(older).first()!!.updatedAt
+
+        repo.setTheme(older, ThemePreset.INSTAGRAM_DM)
+
+        assertThat(repo.story(older).first()!!.updatedAt).isEqualTo(before)
+        assertThat(repo.stories.first().map { it.story.id }).containsExactly(newer, older).inOrder()
+    }
+
+    @Test
     fun deleteMessageRemovesItsImage() = runBlocking<Unit> {
         val a = repo.saveCharacter(null, "A", 1, false, null)
         val story = repo.createStory("S", ThemePreset.LYSN_BUBBLE)
@@ -162,5 +177,139 @@ class StudioRepositoryTest {
         repo.deleteMessage(msg)
         assertThat(repo.messages(story).first()).isEmpty()
         assertThat(images.deleted).containsExactly("/files/x.webp")
+    }
+
+    @Test
+    fun initializeSeedsOnlyWhenAskedAndThenReportsReady() = runBlocking<Unit> {
+        assertThat(repo.ready.value).isFalse()
+        repo.initialize(seedSample = false)
+        assertThat(repo.ready.value).isTrue()
+        assertThat(repo.stories.first()).isEmpty()
+
+        repo.initialize(seedSample = true)
+        assertThat(repo.stories.first()).hasSize(1)
+    }
+
+    @Test
+    fun duplicateStoryCopiesMessagesAndGivesImagesTheirOwnFiles() = runBlocking<Unit> {
+        val a = repo.saveCharacter(null, "A", 0xFF000000, false, null)
+        val story = repo.createStory("Gốc", ThemePreset.WEVERSE_DM)
+        repo.setChatTitle(story, "Nhóm chat")
+        repo.addMessage(story, a, MessageType.TEXT, "một", timeLabel = "23:41")
+        repo.addMessage(story, a, MessageType.IMAGE, imagePath = "/files/p.webp")
+        repo.addMessage(story, null, MessageType.NARRATION, "hết")
+
+        val copyId = repo.duplicateStory(story)!!
+
+        val copy = repo.story(copyId).first()!!
+        assertThat(copy.title).isEqualTo("Gốc (bản sao)")
+        assertThat(copy.theme).isEqualTo(ThemePreset.WEVERSE_DM)
+        assertThat(copy.chatTitle).isEqualTo("Nhóm chat")
+        val copied = repo.messages(copyId).first()
+        assertThat(copied.map { it.text }).containsExactly("một", "", "hết").inOrder()
+        assertThat(copied[0].timeLabel).isEqualTo("23:41")
+        assertThat(copied[1].imagePath).isEqualTo("/files/p.webp.copy0")
+        assertThat(images.copied).containsExactly("/files/p.webp")
+        // The original is untouched, and deleting the copy must not delete the original's file.
+        assertThat(repo.messages(story).first()).hasSize(3)
+        repo.deleteStory(copyId)
+        assertThat(images.deleted).containsExactly("/files/p.webp.copy0")
+    }
+
+    @Test
+    fun duplicateStoryDropsAnImageThatCannotBeCopiedAndHandlesMissingStory() = runBlocking<Unit> {
+        val a = repo.saveCharacter(null, "A", 0xFF000000, false, null)
+        val story = repo.createStory("Gốc", ThemePreset.LYSN_BUBBLE)
+        repo.addMessage(story, a, MessageType.TEXT, "một")
+        repo.addMessage(story, a, MessageType.IMAGE, imagePath = "/files/p.webp")
+        images.failCopy = true
+
+        val copyId = repo.duplicateStory(story)!!
+
+        assertThat(repo.messages(copyId).first().map { it.type }).containsExactly(MessageType.TEXT)
+        assertThat(repo.duplicateStory(9_999)).isNull()
+    }
+
+    @Test
+    fun templateUsesExistingCastAndCreatesOnlyMissingRoles() = runBlocking<Unit> {
+        val idol = repo.saveCharacter(null, "Minho", 0xFFFF6584, false, null)
+        val template = StoryTemplates.byId("group_chat")!!
+
+        val storyId = repo.createStoryFromTemplate(template)
+
+        val cast = repo.characters.first()
+        // The idol was reused; "me" and a second member were missing and got placeholders.
+        assertThat(cast.map { it.name }).containsExactly("Minho", "Y/N (Bạn)", "Thành viên")
+        assertThat(cast.count { it.isUser }).isEqualTo(1)
+        assertThat(cast.map { it.roleColorHex }.distinct()).hasSize(3)
+        val story = repo.story(storyId).first()!!
+        assertThat(story.title).isEqualTo(template.title)
+        assertThat(story.theme).isEqualTo(template.theme)
+        val messages = repo.messages(storyId).first()
+        assertThat(messages).hasSize(template.lines.size)
+        assertThat(messages.map { it.position }).isEqualTo(template.lines.indices.toList())
+        assertThat(messages.filter { it.type == MessageType.NARRATION }.all { it.characterId == null }).isTrue()
+        assertThat(messages.mapNotNull { it.characterId }.toSet()).containsAtLeast(idol, cast[1].id, cast[2].id)
+    }
+
+    @Test
+    fun everyBuiltInTemplateCanBeCreatedTwiceWithoutAddingCharactersAgain() = runBlocking<Unit> {
+        StoryTemplates.all.forEach { repo.createStoryFromTemplate(it) }
+        val castAfterFirst = repo.characters.first()
+        StoryTemplates.all.forEach { repo.createStoryFromTemplate(it) }
+        assertThat(repo.characters.first()).isEqualTo(castAfterFirst)
+        assertThat(repo.stories.first()).hasSize(StoryTemplates.all.size * 2)
+    }
+
+    @Test
+    fun deletedMessageCanBeRestoredToItsOldPlaceWithItsImage() = runBlocking<Unit> {
+        val a = repo.saveCharacter(null, "A", 0xFF000000, false, null)
+        val story = repo.createStory("S", ThemePreset.LYSN_BUBBLE)
+        repo.addMessage(story, a, MessageType.TEXT, "một")
+        repo.addMessage(story, a, MessageType.IMAGE, imagePath = "/files/x.webp")
+        repo.addMessage(story, a, MessageType.TEXT, "ba")
+        val (first, image, third) = repo.messages(story).first()
+
+        repo.deleteMessage(image, deleteImage = false)
+        assertThat(images.deleted).isEmpty()
+        assertThat(repo.messages(story).first().map { it.text }).containsExactly("một", "ba").inOrder()
+
+        assertThat(repo.restoreMessage(image)).isTrue()
+        assertThat(repo.messages(story).first()).containsExactly(first, image, third).inOrder()
+        // Restoring twice is harmless.
+        assertThat(repo.restoreMessage(image)).isTrue()
+        assertThat(repo.messages(story).first()).hasSize(3)
+    }
+
+    @Test
+    fun restoreFailsCleanlyWhenStoryOrSpeakerIsGone() = runBlocking<Unit> {
+        val a = repo.saveCharacter(null, "A", 0xFF000000, false, null)
+        val b = repo.saveCharacter(null, "B", 0xFF111111, false, null)
+        val story = repo.createStory("S", ThemePreset.LYSN_BUBBLE)
+        repo.addMessage(story, a, MessageType.TEXT, "của A")
+        repo.addMessage(story, b, MessageType.TEXT, "của B")
+        val (fromA, fromB) = repo.messages(story).first()
+
+        repo.deleteMessage(fromA, deleteImage = false)
+        repo.deleteCharacter(db.characterDao().getById(a)!!)
+        assertThat(repo.restoreMessage(fromA)).isFalse()
+
+        repo.deleteMessage(fromB, deleteImage = false)
+        repo.deleteStory(story)
+        assertThat(repo.restoreMessage(fromB)).isFalse()
+    }
+
+    @Test
+    fun orphanCleanupDeletesOnlyOldFilesNothingRefersTo() = runBlocking<Unit> {
+        val a = repo.saveCharacter(null, "A", 0xFF000000, false, "/files/avatar.webp")
+        val story = repo.createStory("S", ThemePreset.LYSN_BUBBLE)
+        repo.addMessage(story, a, MessageType.IMAGE, imagePath = "/files/used.webp")
+        images.stored = listOf("/files/avatar.webp", "/files/used.webp", "/files/orphan.webp")
+
+        assertThat(repo.cleanupOrphanImages()).isEqualTo(1)
+        assertThat(images.deleted).containsExactly("/files/orphan.webp")
+
+        images.stored = emptyList()
+        assertThat(repo.cleanupOrphanImages()).isEqualTo(0)
     }
 }

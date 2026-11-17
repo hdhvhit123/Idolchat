@@ -5,6 +5,9 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -28,6 +31,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.outlined.AddAPhoto
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -98,24 +102,37 @@ fun EditCharacterDialog(
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text(
-                    if (character == null) "Thêm nhân vật" else "Tùy chỉnh Nhân vật Thần tượng",
+                    if (character == null) "Thêm nhân vật" else "Sửa nhân vật",
                     style = MaterialTheme.typography.titleLarge,
                 )
                 Spacer(Modifier.height(20.dp))
+                // The camera badge sits outside the avatar's circular clip, so it is not cut off.
                 Box(
                     modifier = Modifier
-                        .size(96.dp)
-                        .clip(CircleShape)
-                        .clickable(role = Role.Button) {
+                        .size(104.dp)
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            role = Role.Button,
+                        ) {
                             picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
                         }
                         .semantics { contentDescription = "Chọn ảnh đại diện" },
                 ) {
-                    Avatar(name = name.ifBlank { "?" }, colorHex = color, model = previewModel, size = 96.dp)
+                    Avatar(
+                        name = name.ifBlank { "?" },
+                        colorHex = color,
+                        model = previewModel,
+                        size = 96.dp,
+                        modifier = Modifier.align(Alignment.Center),
+                    )
                     Box(
                         modifier = Modifier
                             .align(Alignment.BottomEnd)
-                            .size(30.dp)
+                            .size(34.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.surface)
+                            .padding(2.dp)
                             .clip(CircleShape)
                             .background(MaterialTheme.colorScheme.primary),
                         contentAlignment = Alignment.Center,
@@ -134,7 +151,7 @@ fun EditCharacterDialog(
                         if (it.length <= NameRules.MAX_NAME_LENGTH) name = it
                         nameError = false
                     },
-                    label = { Text("Tên hiển thị / Idol") },
+                    label = { Text("Tên hiển thị") },
                     singleLine = true,
                     isError = nameError,
                     supportingText = { if (nameError) Text("Hãy nhập tên nhân vật") },
@@ -145,19 +162,23 @@ fun EditCharacterDialog(
                 Text("Màu vai diễn", style = MaterialTheme.typography.labelLarge, modifier = Modifier.fillMaxWidth())
                 Spacer(Modifier.height(8.dp))
                 FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
-                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth().selectableGroup(),
                 ) {
                     RolePalette.colors.forEach { c ->
                         val selected = c == color
                         Box(
                             modifier = Modifier
-                                .size(34.dp)
+                                .size(44.dp)
                                 .clip(CircleShape)
                                 .background(Color(c))
-                                .border(if (selected) 3.dp else 0.dp, MaterialTheme.colorScheme.onSurface, CircleShape)
-                                .clickable(role = Role.RadioButton) { color = c }
+                                .border(
+                                    width = if (selected) 3.dp else 0.dp,
+                                    color = if (selected) MaterialTheme.colorScheme.onSurface else Color.Transparent,
+                                    shape = CircleShape,
+                                )
+                                .selectable(selected = selected, role = Role.RadioButton) { color = c }
                                 .semantics { contentDescription = "Màu ${RolePalette.colors.indexOf(c) + 1}" },
                             contentAlignment = Alignment.Center,
                         ) {
@@ -183,7 +204,7 @@ fun EditCharacterDialog(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Column(Modifier.weight(1f)) {
-                        Text("Đây là tôi", style = MaterialTheme.typography.titleSmall)
+                        Text("Đây là nhân vật của tôi", style = MaterialTheme.typography.titleSmall)
                         Text(
                             "Tin nhắn của nhân vật này nằm bên phải",
                             style = MaterialTheme.typography.bodySmall,
@@ -195,7 +216,10 @@ fun EditCharacterDialog(
                 Spacer(Modifier.height(20.dp))
                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     if (onDelete != null) {
-                        TextButton(onClick = onDelete) {
+                        TextButton(
+                            onClick = onDelete,
+                            colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                        ) {
                             Icon(Icons.Outlined.Delete, null, modifier = Modifier.size(18.dp))
                             Spacer(Modifier.width(4.dp))
                             Text("Xóa")
@@ -214,7 +238,7 @@ fun EditCharacterDialog(
                             }
                         },
                         modifier = Modifier.testTag("character_save"),
-                    ) { Text("Lưu hồ sơ") }
+                    ) { Text(if (saving) "Đang lưu…" else "Lưu") }
                 }
             }
         }

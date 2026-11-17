@@ -36,6 +36,9 @@ interface CharacterDao {
 
     @Query("SELECT COUNT(*) FROM characters")
     suspend fun getCount(): Int
+
+    @Query("SELECT avatarPath FROM characters WHERE avatarPath IS NOT NULL")
+    suspend fun allAvatarPaths(): List<String>
 }
 
 @Dao
@@ -96,6 +99,9 @@ interface MessageDao {
 
     @Insert
     suspend fun insert(message: MessageEntity): Long
+
+    @Query("SELECT imagePath FROM messages WHERE imagePath IS NOT NULL")
+    suspend fun allImagePaths(): List<String>
 
     @Insert
     suspend fun insertAll(messages: List<MessageEntity>)

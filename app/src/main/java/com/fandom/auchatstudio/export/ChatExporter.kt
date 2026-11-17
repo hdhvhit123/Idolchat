@@ -1,5 +1,6 @@
 package com.fandom.auchatstudio.export
 
+import com.fandom.auchatstudio.core.Brand
 import android.content.ContentValues
 import android.content.Context
 import android.graphics.Bitmap
@@ -29,7 +30,7 @@ interface ExportService {
 
 /**
  * "Long Screenshot" export (roadmap item): the whole chat is drawn on an off-screen Canvas,
- * split into pages that fit in memory, watermarked and saved to Pictures/AU Chat Studio.
+ * split into pages that fit in memory, watermarked and saved to Pictures/<Brand.EXPORT_FOLDER>.
  * MediaStore inserts need no storage permission on Android 10+.
  */
 class ChatExporter(private val context: Context) : ExportService {
@@ -64,7 +65,7 @@ class ChatExporter(private val context: Context) : ExportService {
         val values = ContentValues().apply {
             put(MediaStore.Images.Media.DISPLAY_NAME, displayName)
             put(MediaStore.Images.Media.MIME_TYPE, "image/png")
-            put(MediaStore.Images.Media.RELATIVE_PATH, "${Environment.DIRECTORY_PICTURES}/AU Chat Studio")
+            put(MediaStore.Images.Media.RELATIVE_PATH, "${Environment.DIRECTORY_PICTURES}/${Brand.EXPORT_FOLDER}")
             put(MediaStore.Images.Media.IS_PENDING, 1)
         }
         val collection = MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)

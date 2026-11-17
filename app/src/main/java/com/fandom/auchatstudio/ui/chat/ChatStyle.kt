@@ -47,7 +47,8 @@ data class ChatStyle(
             incomingBubble = 0xFFFFFFFF,
             incomingText = 0xFF1F2A44,
             outgoingGradient = listOf(0xFF7CB8EB, 0xFF9AC9F2),
-            outgoingText = 0xFFFFFFFF,
+            // Dark navy, not white: white on this pastel blue is only about 2:1.
+            outgoingText = 0xFF14294D,
             bubbleBorder = 0xFFFFFFFF,
             bubbleBorderWidthDp = 1.5f,
             cornerDp = 18f,

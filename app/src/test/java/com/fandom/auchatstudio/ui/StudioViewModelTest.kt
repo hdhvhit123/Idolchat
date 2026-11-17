@@ -145,6 +145,40 @@ class StudioViewModelTest {
     }
 
     @Test
+    fun writtenLineCanBeHandedToTheNarratorAndBack() = runTest(dispatcher) {
+        val vm = subscribed()
+        vm.sendText("Ba ngày sau")
+        awaitItems(vm, 1)
+
+        vm.changeSpeaker(vm.state.value.items.single().message, null)
+        waitFor(step = { runCurrent() }) { vm.state.value.items.single().isNarration }
+        val narration = vm.state.value.items.single().message
+        assertThat(narration.characterId).isNull()
+        assertThat(narration.text).isEqualTo("Ba ngày sau")
+
+        vm.changeSpeaker(narration, meId)
+        waitFor(step = { runCurrent() }) { !vm.state.value.items.single().isNarration }
+        val line = vm.state.value.items.single()
+        assertThat(line.message.type).isEqualTo(MessageType.TEXT)
+        assertThat(line.message.characterId).isEqualTo(meId)
+        assertThat(line.outgoing).isTrue()
+    }
+
+    @Test
+    fun voiceNoteCannotBecomeNarration() = runTest(dispatcher) {
+        val vm = subscribed()
+        vm.sendVoice(5)
+        awaitItems(vm, 1)
+        val voice = vm.state.value.items.single().message
+
+        vm.changeSpeaker(voice, null)
+        runCurrent()
+        vm.changeSpeaker(voice, meId)
+        waitFor(step = { runCurrent() }) { vm.state.value.items.single().message.characterId == meId }
+        assertThat(vm.state.value.items.single().message.type).isEqualTo(MessageType.VOICE)
+    }
+
+    @Test
     fun cycleThemeRotatesPresets() = runTest(dispatcher) {
         val vm = subscribed()
         vm.cycleTheme()
@@ -186,6 +220,50 @@ class StudioViewModelTest {
         vm.delete(vm.state.value.items[0].message)
         awaitItems(vm, 2)
         assertThat(vm.state.value.items.map { it.message.text }).containsExactly("3", "2").inOrder()
+    }
+
+    @Test
+    fun deleteOffersUndoAndKeepsTheImageUntilTheOfferEnds() = runTest(dispatcher) {
+        val events = mutableListOf<StudioEvent>()
+        val vm = subscribed(events = events)
+        vm.sendText("đầu"); awaitItems(vm, 1)
+        vm.sendImage(Uri.parse("content://picked/1")); awaitItems(vm, 2)
+        vm.sendText("cuối"); awaitItems(vm, 3)
+        val image = vm.state.value.items[1].message
+
+        vm.delete(image)
+        awaitItems(vm, 2)
+        waitFor(step = { runCurrent() }) { events.any { it is StudioEvent.MessageDeleted } }
+        assertThat(events.filterIsInstance<StudioEvent.MessageDeleted>().single().message).isEqualTo(image)
+        assertThat(images.deleted).isEmpty()
+
+        // Undo puts it back between its old neighbours.
+        vm.undoDelete(image)
+        awaitItems(vm, 3)
+        assertThat(vm.state.value.items.map { it.message.type })
+            .containsExactly(MessageType.TEXT, MessageType.IMAGE, MessageType.TEXT).inOrder()
+        assertThat(images.deleted).isEmpty()
+
+        // Deleting again and letting the offer lapse finally removes the file.
+        vm.delete(image)
+        awaitItems(vm, 2)
+        vm.finalizeDelete(image)
+        waitFor(step = { runCurrent() }) { images.deleted == listOf(image.imagePath) }
+    }
+
+    @Test
+    fun undoAfterSpeakerWasDeletedReportsFailureInsteadOfCrashing() = runTest(dispatcher) {
+        val events = mutableListOf<StudioEvent>()
+        val vm = subscribed(events = events)
+        vm.sendText("xin chào"); awaitItems(vm, 1)
+        val message = vm.state.value.items[0].message
+        vm.delete(message)
+        awaitItems(vm, 0)
+        runBlocking { repo.deleteCharacter(db.characterDao().getById(idolId)!!) }
+
+        vm.undoDelete(message)
+        waitFor(step = { runCurrent() }) { events.any { it is StudioEvent.Toast } }
+        assertThat(vm.state.value.items).isEmpty()
     }
 
     @Test

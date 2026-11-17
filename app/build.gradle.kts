@@ -13,7 +13,9 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.fandom.auchatstudio"
+        // The id the app is known by on devices and on Google Play; it can never change once
+        // published. The Kotlin package (namespace above) is separate and stays as it is.
+        applicationId = "io.github.hdhvhit123.idolchat"
         // Android 12 (API 31) through Android 16 (API 36): the five most recent major releases.
         minSdk = 31
         targetSdk = 36
@@ -112,6 +114,7 @@ dependencies {
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.androidx.test.rules)
+    androidTestImplementation(libs.androidx.test.espresso.core)
     androidTestImplementation(libs.truth)
     androidTestImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(libs.androidx.room.testing)

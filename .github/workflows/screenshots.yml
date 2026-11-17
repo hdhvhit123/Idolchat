@@ -1,0 +1,91 @@
+name: Screenshots
+
+# Runs the screenshot tour on one emulator and publishes the PNGs to the `ci-screenshots`
+# branch (always replaced with the latest set) so UI changes can be reviewed visually.
+on:
+  push:
+    branches: [ui-upgrade]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  tour:
+    name: Screenshot tour · API 34
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Unit tests (core + Robolectric)
+        run: ./gradlew :core:test :app:testDebugUnitTest
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Build test APKs
+        run: ./gradlew :app:assembleDebug :app:assembleDebugAndroidTest
+
+      - name: Run screenshot tour
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -no-snapshot
+          # See android.yml: system "isn't responding" dialogs would cover the screenshots.
+          script: |
+            adb shell settings put global hide_error_dialogs 1
+            adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS
+            ./gradlew :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.fandom.auchatstudio.ScreenshotTourTest
+
+      - name: Collect screenshots
+        if: always()
+        run: |
+          mkdir -p shots
+          find app/build/outputs -name '*.png' -path '*additional_output*' -exec cp {} shots/ \; || true
+          ls -la shots
+
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots
+          path: shots/
+
+      - name: Upload reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshot-run-reports
+          path: |
+            app/build/reports/tests/
+            app/build/reports/androidTests/
+
+      - name: Publish to ci-screenshots branch
+        if: always()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd shots
+          [ -n "$(ls -A . 2>/dev/null)" ] || { echo "no screenshots"; exit 0; }
+          echo "Screenshots of $GITHUB_SHA ($GITHUB_REF_NAME)" > README.md
+          git init -q -b ci-screenshots
+          git add .
+          git -c user.name="github-actions" -c user.email="github-actions@users.noreply.github.com" commit -qm "Screenshots for $GITHUB_SHA"
+          git push -f "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" ci-screenshots

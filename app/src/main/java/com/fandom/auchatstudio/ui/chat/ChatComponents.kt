@@ -10,11 +10,13 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -32,8 +34,11 @@ import androidx.compose.material.icons.outlined.Call
 import androidx.compose.material.icons.outlined.Videocam
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -163,6 +168,7 @@ fun ChatMessageRow(
             Text(
                 text = item.speaker?.name ?: "Không rõ",
                 color = Color(style.senderName),
+                style = ChatTextStyle,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Medium,
                 modifier = Modifier.padding(start = AvatarSize + AvatarGap + 4.dp, bottom = 2.dp),
@@ -193,6 +199,7 @@ fun ChatMessageRow(
             Text(
                 text = time,
                 color = Color(style.timeText),
+                style = ChatTextStyle,
                 fontSize = 11.sp,
                 modifier = Modifier.padding(
                     top = 2.dp,
@@ -246,7 +253,7 @@ private fun MessageBubble(item: ChatItem, style: ChatStyle) {
             Spacer(Modifier.width(8.dp))
             AudioWaveformMock(color = textColor.copy(alpha = 0.9f), modifier = Modifier.width(110.dp).height(26.dp))
             Spacer(Modifier.width(8.dp))
-            Text(VoiceFormat.format(m.voiceSeconds), color = textColor, fontSize = 12.sp)
+            Text(VoiceFormat.format(m.voiceSeconds), color = textColor, style = ChatTextStyle, fontSize = 12.sp)
         }
 
         else -> Text(
@@ -316,7 +323,11 @@ fun TypingIndicatorRow(
     }
 }
 
-/** Themed fake app header (back arrow, partner avatars, name, call icons). */
+/**
+ * The fake chat app header. In the player it is pure decoration (call/video icons); in the
+ * Studio the same bar carries the editor's [actions] and a [subtitle], so the screen has one
+ * header instead of an app bar stacked on a chat bar.
+ */
 @Composable
 fun ChatHeader(
     title: String,
@@ -324,6 +335,9 @@ fun ChatHeader(
     style: ChatStyle,
     modifier: Modifier = Modifier,
     onBack: (() -> Unit)? = null,
+    onTitleClick: (() -> Unit)? = null,
+    subtitle: (@Composable () -> Unit)? = null,
+    actions: (@Composable RowScope.() -> Unit)? = null,
 ) {
     val content = Color(style.headerContent)
     Row(
@@ -340,23 +354,53 @@ fun ChatHeader(
         } else {
             Spacer(Modifier.width(12.dp))
         }
-        HeaderAvatars(partners, style.headerBackground)
-        Spacer(Modifier.width(10.dp))
-        Column(Modifier.weight(1f)) {
-            Text(title, color = content, fontWeight = FontWeight.SemiBold, fontSize = 16.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text(
-                text = when (style.preset) {
-                    ThemePreset.LYSN_BUBBLE -> "Bubble · đang hoạt động"
-                    ThemePreset.WEVERSE_DM -> "● Online"
-                    ThemePreset.INSTAGRAM_DM -> "Đang hoạt động"
-                },
-                color = Color(style.headerSubtle),
-                fontSize = 12.sp,
-                maxLines = 1,
-            )
+        val titleClick = if (onTitleClick != null) {
+            Modifier.clip(RoundedCornerShape(12.dp)).clickable(onClickLabel = "Đổi tên trên khung chat", onClick = onTitleClick)
+        } else {
+            Modifier
         }
-        Icon(Icons.Outlined.Call, contentDescription = null, tint = content, modifier = Modifier.padding(horizontal = 8.dp))
-        Icon(Icons.Outlined.Videocam, contentDescription = null, tint = content, modifier = Modifier.padding(start = 8.dp, end = 12.dp))
+        Row(
+            modifier = Modifier.weight(1f).then(titleClick).heightIn(min = 48.dp).padding(end = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            HeaderAvatars(partners, style.headerBackground)
+            Spacer(Modifier.width(10.dp))
+            Column(Modifier.weight(1f)) {
+                Text(
+                    title,
+                    color = content,
+                    style = ChatTextStyle,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 16.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                if (subtitle != null) {
+                    CompositionLocalProvider(
+                        LocalContentColor provides Color(style.headerSubtle),
+                        LocalTextStyle provides ChatTextStyle.copy(fontSize = 12.sp, lineHeight = 16.sp),
+                    ) { subtitle() }
+                } else {
+                    Text(
+                        text = when (style.preset) {
+                            ThemePreset.LYSN_BUBBLE -> "Bubble · đang hoạt động"
+                            ThemePreset.WEVERSE_DM -> "● Online"
+                            ThemePreset.INSTAGRAM_DM -> "Đang hoạt động"
+                        },
+                        color = Color(style.headerSubtle),
+                        style = ChatTextStyle,
+                        fontSize = 12.sp,
+                        maxLines = 1,
+                    )
+                }
+            }
+        }
+        if (actions != null) {
+            CompositionLocalProvider(LocalContentColor provides content) { actions() }
+        } else {
+            Icon(Icons.Outlined.Call, contentDescription = null, tint = content, modifier = Modifier.padding(horizontal = 8.dp))
+            Icon(Icons.Outlined.Videocam, contentDescription = null, tint = content, modifier = Modifier.padding(start = 8.dp, end = 12.dp))
+        }
     }
 }
 
