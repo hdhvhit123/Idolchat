@@ -9,12 +9,12 @@
     <string name="action_manage">Gérer</string>
     <string name="action_play">Lire</string>
     <string name="action_rename">Renommer</string>
-    <string name="action_save">Enregistrer</string>
+    <string name="action_save">Valider</string>
     <string name="action_send">Envoyer</string>
     <string name="action_share">Partager</string>
     <string name="action_undo">Annuler</string>
     <string name="add_character">Ajouter un personnage</string>
-    <string name="app_tagline">Crée des histoires de chat avec des idols, enregistre-les en image</string>
+    <string name="app_tagline">Crée des chats d\'idols, enregistre-les en image</string>
     <string name="avatar_unreadable">Impossible de lire la photo choisie, l\'ancienne a été conservée.</string>
     <string name="badge_me">Moi</string>
     <string name="cast_empty_message">Ajoute ton idol et un personnage « moi » pour commencer à discuter.</string>

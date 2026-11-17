@@ -92,7 +92,7 @@ S = {
 "new_story": "Nova história",
 "no_stories_title": "Ainda não há histórias",
 "no_stories_message": "Escolha um modelo abaixo para ter um chat completo na hora, ou escreva o seu do zero.",
-"player_auto_play": "Reprodução automática",
+"player_auto_play": "Automático",
 "player_auto_play_action": "Reprodução automática",
 "player_empty": "Esta história ainda não tem mensagens",
 "player_exit": "Sair",

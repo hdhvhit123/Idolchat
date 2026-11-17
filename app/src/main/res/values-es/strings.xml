@@ -14,7 +14,7 @@
     <string name="action_share">Compartir</string>
     <string name="action_undo">Deshacer</string>
     <string name="add_character">Añadir personaje</string>
-    <string name="app_tagline">Crea historias de chat con idols y guárdalas como imagen</string>
+    <string name="app_tagline">Crea chats de idols y guárdalos como imagen</string>
     <string name="avatar_unreadable">No se pudo leer la foto elegida, así que se mantuvo la anterior.</string>
     <string name="badge_me">Yo</string>
     <string name="cast_empty_message">Añade a tu idol y un personaje “yo” para empezar a chatear.</string>
@@ -93,7 +93,7 @@
     <string name="new_story">Nueva historia</string>
     <string name="no_stories_message">Elige una plantilla de abajo para tener un chat completo al instante, o escribe el tuyo desde cero.</string>
     <string name="no_stories_title">Aún no hay historias</string>
-    <string name="player_auto_play">Reproducción automática</string>
+    <string name="player_auto_play">Automático</string>
     <string name="player_auto_play_action">Reproducción automática</string>
     <string name="player_empty">Esta historia aún no tiene mensajes</string>
     <string name="player_exit">Salir</string>

@@ -1,6 +1,6 @@
 # Español
 S = {
-"app_tagline": "Crea historias de chat con idols y guárdalas como imagen",
+"app_tagline": "Crea chats de idols y guárdalos como imagen",
 "action_add": "Añadir",
 "action_cancel": "Cancelar",
 "action_create": "Crear",
@@ -92,7 +92,7 @@ S = {
 "new_story": "Nueva historia",
 "no_stories_title": "Aún no hay historias",
 "no_stories_message": "Elige una plantilla de abajo para tener un chat completo al instante, o escribe el tuyo desde cero.",
-"player_auto_play": "Reproducción automática",
+"player_auto_play": "Automático",
 "player_auto_play_action": "Reproducción automática",
 "player_empty": "Esta historia aún no tiene mensajes",
 "player_exit": "Salir",

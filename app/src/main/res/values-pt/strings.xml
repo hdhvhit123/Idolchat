@@ -93,7 +93,7 @@
     <string name="new_story">Nova história</string>
     <string name="no_stories_message">Escolha um modelo abaixo para ter um chat completo na hora, ou escreva o seu do zero.</string>
     <string name="no_stories_title">Ainda não há histórias</string>
-    <string name="player_auto_play">Reprodução automática</string>
+    <string name="player_auto_play">Automático</string>
     <string name="player_auto_play_action">Reprodução automática</string>
     <string name="player_empty">Esta história ainda não tem mensagens</string>
     <string name="player_exit">Sair</string>

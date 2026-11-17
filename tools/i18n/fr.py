@@ -1,6 +1,6 @@
 # Français
 S = {
-"app_tagline": "Crée des histoires de chat avec des idols, enregistre-les en image",
+"app_tagline": "Crée des chats d'idols, enregistre-les en image",
 "action_add": "Ajouter",
 "action_cancel": "Annuler",
 "action_create": "Créer",
@@ -9,7 +9,7 @@ S = {
 "action_manage": "Gérer",
 "action_play": "Lire",
 "action_rename": "Renommer",
-"action_save": "Enregistrer",
+"action_save": "Valider",
 "action_send": "Envoyer",
 "action_share": "Partager",
 "action_undo": "Annuler",

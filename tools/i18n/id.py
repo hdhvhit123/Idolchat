@@ -92,7 +92,7 @@ S = {
 "new_story": "Cerita baru",
 "no_stories_title": "Belum ada cerita",
 "no_stories_message": "Pilih template di bawah untuk langsung dapat chat yang lengkap, atau tulis sendiri dari awal.",
-"player_auto_play": "Putar otomatis",
+"player_auto_play": "Otomatis",
 "player_auto_play_action": "Putar otomatis",
 "player_empty": "Cerita ini belum punya pesan",
 "player_exit": "Keluar",
