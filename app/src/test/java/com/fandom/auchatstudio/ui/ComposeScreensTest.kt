@@ -65,7 +65,7 @@ class ComposeScreensTest {
         rule.onNodeWithText("Chưa có kịch bản nào").assertIsDisplayed()
         rule.onNodeWithTag("fab_new_story").performClick()
         rule.onNodeWithTag("new_story_title").performTextInput("Concert")
-        rule.onNodeWithText("Weverse DM").performClick()
+        rule.onNodeWithText("Neon").performClick()
         rule.onNodeWithTag("new_story_confirm").performClick()
         assertThat(created).isEqualTo("Concert" to ThemePreset.WEVERSE_DM)
     }
@@ -93,7 +93,7 @@ class ComposeScreensTest {
             }
         }
         rule.onNodeWithText("🎙 Tin nhắn thoại").assertIsDisplayed()
-        rule.onNodeWithText("Weverse DM · 3 tin nhắn").assertIsDisplayed()
+        rule.onNodeWithText("Neon · 3 tin nhắn").assertIsDisplayed()
         rule.onNodeWithText("Hẹn hò bí mật").performClick()
         assertThat(opened).isEqualTo(7L)
     }
@@ -198,7 +198,7 @@ class ComposeScreensTest {
             }
         }
         rule.onNodeWithTag("studio_story_title", useUnmergedTree = true).assertTextEquals("Nửa đêm")
-        rule.onNodeWithTag("studio_theme_label", useUnmergedTree = true).assertTextEquals("Weverse DM")
+        rule.onNodeWithTag("studio_theme_label", useUnmergedTree = true).assertTextEquals("Neon")
         rule.onNodeWithTag("cycle_theme").performClick()
         rule.onNodeWithTag("play_story").performClick()
         assertThat(cycled).isEqualTo(1)

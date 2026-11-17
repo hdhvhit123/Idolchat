@@ -9,7 +9,7 @@
 | Tính năng | Mô tả |
 |---|---|
 | **Tap-to-Chat** | Chế độ đọc: mỗi lần chạm hiện bong bóng “đang soạn tin…” với thời gian thật theo độ dài tin, rồi tin nhắn nảy vào. Chạm khi đang soạn để bỏ qua. Có **Tự phát** để quay màn hình làm video. |
-| **3 preset nền tảng** | Lysn Bubble (pastel `#7CB8EB`, nền `#F3F6FB`, bo 18dp, đổ bóng nhẹ, viền trắng), Weverse DM (nền `#121214`, viền neon `#00E676`, gradient), Instagram DM (đen OLED, gradient hoàng hôn tím–cam, viền mảnh). Đổi bằng **1 nút**. |
+| **3 kiểu chat** | Pastel (bong bóng `#7CB8EB`, nền `#F3F6FB`, bo 18dp, đổ bóng nhẹ, viền trắng), Neon (nền `#121214`, viền neon `#00E676`, gradient), Hoàng hôn (đen OLED, gradient tím–cam, viền mảnh). Đổi bằng **1 nút**. Tên hiển thị cố ý không dùng tên thương hiệu của ứng dụng khác. |
 | **Director Switcher** | Thanh chọn người nói một chạm ngay trên ô nhập: idol, “bạn” hoặc người dẫn truyện. |
 | **Loại tin nhắn** | Văn bản, tin nhắn thoại với sóng âm vẽ bằng Canvas, ảnh, lời dẫn truyện; giờ hiển thị tùy chọn. |
 | **Nhân vật** | Tên, màu vai diễn, avatar chọn bằng **Photo Picker** (không cần quyền bộ nhớ). Ảnh được sao chép vào `filesDir` nên không bao giờ mất sau khi khởi động lại máy. |
