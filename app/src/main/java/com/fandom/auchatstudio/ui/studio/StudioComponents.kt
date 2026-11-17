@@ -124,12 +124,13 @@ fun Composer(
             )
             if (isNarrator) {
                 // One-tap stage directions: the lines people type most as a narrator.
+                val presets = stringArrayResource(R.array.narration_presets).toList()
                 LazyRow(
                     contentPadding = PaddingValues(horizontal = 12.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.fillMaxWidth().testTag("narration_presets"),
                 ) {
-                    items(stringArrayResource(R.array.narration_presets).toList(), key = { it }) { preset ->
+                    items(presets, key = { it }) { preset ->
                         AssistChip(onClick = { onSendText(preset) }, label = { Text(preset) })
                     }
                 }
