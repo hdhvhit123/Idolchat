@@ -89,11 +89,11 @@ class AppFlowTest {
         rule.onNodeWithTag("composer_send").performClick()
         rule.waitUntilAtLeastOneExists(hasText("Ba ngày sau"), 5_000)
 
-        waitForTheme("Lysn Bubble")
+        waitForTheme("Pastel")
         rule.onNodeWithTag("cycle_theme").performClick()
-        waitForTheme("Weverse DM")
+        waitForTheme("Neon")
         rule.onNodeWithTag("cycle_theme").performClick()
-        waitForTheme("Instagram DM")
+        waitForTheme("Hoàng hôn")
     }
 
     @Test
@@ -154,7 +154,7 @@ class AppFlowTest {
 
         openOwnStory()
         rule.onNodeWithTag("cycle_theme").performClick()
-        waitForTheme("Weverse DM")
+        waitForTheme("Neon")
         rule.waitUntil(5_000) { !lightStatusBarIcons() }
 
         rule.onNodeWithTag("play_story").performClick()
@@ -198,9 +198,9 @@ class AppFlowTest {
         val newTitle = "Mới ${UUID.randomUUID().toString().take(4)}"
         rule.onNodeWithTag("fab_new_story").performClick()
         rule.onNodeWithTag("new_story_title").performTextInput(newTitle)
-        rule.onNodeWithText("Weverse DM").performClick()
+        rule.onNodeWithText("Neon").performClick()
         rule.onNodeWithTag("new_story_confirm").performClick()
-        waitForTheme("Weverse DM")
+        waitForTheme("Neon")
         rule.onNodeWithTag("studio_story_title", useUnmergedTree = true).assertTextEquals(newTitle)
     }
 
@@ -209,7 +209,7 @@ class AppFlowTest {
         rule.waitUntilAtLeastOneExists(hasText(title), 10_000)
         rule.onNodeWithTag("home_list").performScrollToNode(hasTestTag("template_good_night"))
         rule.onNodeWithTag("template_good_night").performClick()
-        waitForTheme("Lysn Bubble")
+        waitForTheme("Pastel")
         rule.onNodeWithTag("studio_story_title", useUnmergedTree = true).assertTextEquals("Chúc ngủ ngon")
         rule.waitUntilAtLeastOneExists(hasText("Ngủ chưa đó?"), 5_000)
         // A template story is a normal story: it can be played straight away.
