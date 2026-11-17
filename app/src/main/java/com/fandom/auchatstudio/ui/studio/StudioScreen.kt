@@ -1,40 +1,27 @@
 package com.fandom.auchatstudio.ui.studio
 
-import com.fandom.auchatstudio.core.Brand
 import android.content.ClipData
 import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.background
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.FilledIconButton
-import androidx.compose.material3.IconButtonDefaults
-import androidx.compose.material3.OutlinedButton
-import com.fandom.auchatstudio.ui.theme.AUChatStudioTheme
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.LocalContentColor
-import androidx.compose.ui.semantics.LiveRegionMode
-import androidx.compose.ui.semantics.liveRegion
-import androidx.compose.ui.semantics.semantics
-import com.fandom.auchatstudio.ui.components.SystemBarsForBackground
-import kotlinx.coroutines.launch
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -46,12 +33,18 @@ import androidx.compose.material.icons.outlined.Groups
 import androidx.compose.material.icons.outlined.IosShare
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.Palette
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
@@ -70,17 +63,27 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.fandom.auchatstudio.R
+import com.fandom.auchatstudio.core.Brand
 import com.fandom.auchatstudio.core.NameRules
 import com.fandom.auchatstudio.data.MessageEntity
+import com.fandom.auchatstudio.i18n.resolve
 import com.fandom.auchatstudio.ui.appContainer
 import com.fandom.auchatstudio.ui.chat.ChatHeader
 import com.fandom.auchatstudio.ui.chat.ChatMessageRow
+import com.fandom.auchatstudio.ui.components.SystemBarsForBackground
 import com.fandom.auchatstudio.ui.components.TextInputDialog
+import com.fandom.auchatstudio.ui.theme.AUChatStudioTheme
+import kotlinx.coroutines.launch
 
 @Composable
 fun StudioScreen(
@@ -104,11 +107,11 @@ fun StudioScreen(
             launch {
                 snackbar.currentSnackbarData?.dismiss()
                 when (event) {
-                    is StudioEvent.Toast -> snackbar.showSnackbar(event.message, duration = SnackbarDuration.Short)
+                    is StudioEvent.Toast -> snackbar.showSnackbar(event.message.resolve(context), duration = SnackbarDuration.Short)
                     is StudioEvent.MessageDeleted -> {
                         val result = snackbar.showSnackbar(
-                            message = "Đã xóa tin nhắn",
-                            actionLabel = "Hoàn tác",
+                            message = context.getString(R.string.message_deleted),
+                            actionLabel = context.getString(R.string.action_undo),
                             duration = SnackbarDuration.Long,
                         )
                         if (result == SnackbarResult.ActionPerformed) vm.undoDelete(event.message) else vm.finalizeDelete(event.message)
@@ -116,12 +119,12 @@ fun StudioScreen(
                     is StudioEvent.Exported -> {
                         val n = event.uris.size
                         val result = snackbar.showSnackbar(
-                            message = if (n == 1) "Đã lưu ảnh vào Pictures/${Brand.EXPORT_FOLDER}" else "Đã lưu $n ảnh vào Pictures/${Brand.EXPORT_FOLDER}",
-                            actionLabel = "Chia sẻ",
+                            message = context.resources.getQuantityString(R.plurals.export_saved, n, n, "Pictures/${Brand.EXPORT_FOLDER}"),
+                            actionLabel = context.getString(R.string.action_share),
                             duration = SnackbarDuration.Long,
                         )
                         if (result == SnackbarResult.ActionPerformed) {
-                            context.startActivity(Intent.createChooser(shareIntent(event.uris), "Chia sẻ ảnh"))
+                            context.startActivity(Intent.createChooser(shareIntent(event.uris), context.getString(R.string.share_images)))
                         }
                     }
                 }
@@ -243,7 +246,7 @@ fun StudioContent(
                 },
                 actions = {
                     IconButton(onClick = onCycleTheme, modifier = Modifier.testTag("cycle_theme")) {
-                        Icon(Icons.Outlined.Palette, contentDescription = "Đổi phong cách khung chat")
+                        Icon(Icons.Outlined.Palette, contentDescription = stringResource(R.string.cd_cycle_theme))
                     }
                     // The one filled action in the header. Icon colour is the skin's "text on
                     // accent" colour, which is checked for contrast in ThemeContrastTest.
@@ -258,29 +261,29 @@ fun StudioContent(
                         ),
                         modifier = Modifier.testTag("play_story"),
                     ) {
-                        Icon(Icons.Filled.PlayArrow, contentDescription = "Phát kiểu Tap-to-Chat")
+                        Icon(Icons.Filled.PlayArrow, contentDescription = stringResource(R.string.cd_play_tap_to_chat))
                     }
                     Box {
-                        IconButton(onClick = { menu = true }) { Icon(Icons.Outlined.MoreVert, contentDescription = "Thêm") }
+                        IconButton(onClick = { menu = true }) { Icon(Icons.Outlined.MoreVert, contentDescription = stringResource(R.string.cd_more)) }
                         DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                             DropdownMenuItem(
-                                text = { Text(if (state.exporting) "Đang xuất ảnh…" else "Xuất ảnh cuộn dài") },
+                                text = { Text(stringResource(if (state.exporting) R.string.exporting_images else R.string.export_long_image)) },
                                 leadingIcon = { Icon(Icons.Outlined.IosShare, null) },
                                 enabled = !state.exporting,
                                 onClick = { menu = false; onExport() },
                             )
                             DropdownMenuItem(
-                                text = { Text("Đổi tên kịch bản") },
+                                text = { Text(stringResource(R.string.rename_story)) },
                                 leadingIcon = { Icon(Icons.Outlined.DriveFileRenameOutline, null) },
                                 onClick = { menu = false; renaming = true },
                             )
                             DropdownMenuItem(
-                                text = { Text("Tên trên khung chat") },
+                                text = { Text(stringResource(R.string.chat_title_menu)) },
                                 leadingIcon = { Icon(Icons.Outlined.Badge, null) },
                                 onClick = { menu = false; editingChatTitle = true },
                             )
                             DropdownMenuItem(
-                                text = { Text("Quản lý nhân vật") },
+                                text = { Text(stringResource(R.string.manage_characters)) },
                                 leadingIcon = { Icon(Icons.Outlined.Groups, null) },
                                 onClick = { menu = false; onOpenCharacters() },
                             )
@@ -388,10 +391,10 @@ fun StudioContent(
     }
     if (renaming) {
         TextInputDialog(
-            title = "Đổi tên kịch bản",
-            label = "Tên kịch bản",
+            title = stringResource(R.string.rename_story),
+            label = stringResource(R.string.story_name),
             initial = state.story?.title ?: "",
-            confirmText = "Lưu",
+            confirmText = stringResource(R.string.action_save),
             maxLength = NameRules.MAX_TITLE_LENGTH,
             onDismiss = { renaming = false },
             onConfirm = { onRename(it); renaming = false },
@@ -399,10 +402,10 @@ fun StudioContent(
     }
     if (editingChatTitle) {
         TextInputDialog(
-            title = "Tên hiển thị trên khung chat",
-            label = "VD: Minho 🐰",
+            title = stringResource(R.string.chat_title_dialog),
+            label = stringResource(R.string.chat_title_example),
             initial = state.story?.chatTitle ?: state.headerTitle,
-            confirmText = "Lưu",
+            confirmText = stringResource(R.string.action_save),
             maxLength = NameRules.MAX_NAME_LENGTH,
             onDismiss = { editingChatTitle = false },
             onConfirm = { onSetChatTitle(it); editingChatTitle = false },
@@ -426,7 +429,7 @@ private fun ScriptFooter(accent: Color, content: Color, exporting: Boolean, onPl
         OutlinedButton(onClick = onPlay, colors = colors, border = border, modifier = Modifier.testTag("footer_play")) {
             Icon(Icons.Filled.PlayArrow, contentDescription = null, modifier = Modifier.size(18.dp))
             Spacer(Modifier.width(6.dp))
-            Text("Phát thử")
+            Text(stringResource(R.string.footer_play))
         }
         OutlinedButton(
             onClick = onExport,
@@ -437,7 +440,7 @@ private fun ScriptFooter(accent: Color, content: Color, exporting: Boolean, onPl
         ) {
             Icon(Icons.Outlined.IosShare, contentDescription = null, modifier = Modifier.size(18.dp))
             Spacer(Modifier.width(6.dp))
-            Text(if (exporting) "Đang xuất…" else "Xuất ảnh")
+            Text(stringResource(if (exporting) R.string.exporting else R.string.footer_export))
         }
     }
 }
@@ -448,7 +451,7 @@ private fun EmptyChatHint(color: Color, modifier: Modifier = Modifier) {
         Text("💬", style = MaterialTheme.typography.displaySmall)
         Spacer(Modifier.height(8.dp))
         Text(
-            "Chọn người nói ở thanh bên dưới rồi gõ tin nhắn đầu tiên.\nChạm vào một tin nhắn để sửa, đổi thứ tự hoặc xóa.",
+            stringResource(R.string.empty_chat_hint),
             color = color,
             textAlign = TextAlign.Center,
             style = MaterialTheme.typography.bodyMedium,

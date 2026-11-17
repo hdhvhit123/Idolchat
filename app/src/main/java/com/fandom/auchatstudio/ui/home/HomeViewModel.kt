@@ -2,6 +2,7 @@ package com.fandom.auchatstudio.ui.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.fandom.auchatstudio.R
 import com.fandom.auchatstudio.core.NameRules
 import com.fandom.auchatstudio.core.StoryTemplate
 import com.fandom.auchatstudio.core.ThemePreset
@@ -9,6 +10,7 @@ import com.fandom.auchatstudio.data.AppPrefs
 import com.fandom.auchatstudio.data.CharacterEntity
 import com.fandom.auchatstudio.data.StorySummary
 import com.fandom.auchatstudio.data.StudioRepository
+import com.fandom.auchatstudio.i18n.UiText
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
@@ -39,14 +41,14 @@ class HomeViewModel(
             HomeUiState(loading = !ready, stories = stories, characters = characters, showGuide = guide)
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeUiState())
 
-    private val messages = Channel<String>(Channel.BUFFERED)
+    private val messages = Channel<UiText>(Channel.BUFFERED)
 
     /** One-off confirmations for a snackbar. */
-    val messageFlow: Flow<String> = messages.receiveAsFlow()
+    val messageFlow: Flow<UiText> = messages.receiveAsFlow()
 
     /** Creates a story and hands its id to [onCreated] (used to open the editor). */
     fun createStory(title: String, theme: ThemePreset, onCreated: (Long) -> Unit) {
-        val clean = NameRules.normalizeName(title, NameRules.MAX_TITLE_LENGTH) ?: DEFAULT_TITLE
+        val clean = NameRules.normalizeName(title, NameRules.MAX_TITLE_LENGTH) ?: repository.strings.untitledStory
         viewModelScope.launch { onCreated(repository.createStory(clean, theme)) }
     }
 
@@ -62,20 +64,16 @@ class HomeViewModel(
     fun duplicateStory(id: Long) {
         viewModelScope.launch {
             val copy = repository.duplicateStory(id)
-            messages.trySend(if (copy != null) "Đã tạo bản sao" else "Không tạo được bản sao")
+            messages.trySend(UiText(if (copy != null) R.string.copy_done else R.string.copy_failed))
         }
     }
 
     fun deleteStory(id: Long) {
         viewModelScope.launch {
             repository.deleteStory(id)
-            messages.trySend("Đã xóa kịch bản")
+            messages.trySend(UiText(R.string.story_deleted))
         }
     }
 
     fun dismissGuide() = prefs.dismissGuide()
-
-    companion object {
-        const val DEFAULT_TITLE = "Kịch bản chưa đặt tên"
-    }
 }

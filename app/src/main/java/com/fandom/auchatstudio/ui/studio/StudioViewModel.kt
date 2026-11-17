@@ -1,8 +1,10 @@
 package com.fandom.auchatstudio.ui.studio
 
 import android.net.Uri
+import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.fandom.auchatstudio.R
 import com.fandom.auchatstudio.core.MessageType
 import com.fandom.auchatstudio.core.NameRules
 import com.fandom.auchatstudio.core.TimeLabel
@@ -12,6 +14,7 @@ import com.fandom.auchatstudio.data.MessageEntity
 import com.fandom.auchatstudio.data.StoryEntity
 import com.fandom.auchatstudio.data.StudioRepository
 import com.fandom.auchatstudio.export.ExportService
+import com.fandom.auchatstudio.i18n.UiText
 import com.fandom.auchatstudio.ui.chat.ChatItem
 import com.fandom.auchatstudio.ui.chat.ChatLayout
 import com.fandom.auchatstudio.ui.chat.ChatStyle
@@ -50,7 +53,7 @@ data class StudioUiState(
 }
 
 sealed interface StudioEvent {
-    data class Toast(val message: String) : StudioEvent
+    data class Toast(val message: UiText) : StudioEvent
     data class Exported(val uris: List<Uri>) : StudioEvent
 
     /** A message was removed; the UI offers an undo and then reports back how it ended. */
@@ -106,7 +109,7 @@ class StudioViewModel(
         val body = text.trim()
         if (body.isEmpty()) return false
         val speaker = currentSpeaker() ?: run {
-            toast("Hãy thêm nhân vật trước khi nhắn")
+            toast(R.string.toast_add_character_first)
             return false
         }
         viewModelScope.launch {
@@ -120,7 +123,7 @@ class StudioViewModel(
 
     fun sendVoice(seconds: Int) {
         val speaker = currentSpeaker() as? Speaker.Character ?: run {
-            toast("Chọn một nhân vật để gửi tin nhắn thoại")
+            toast(R.string.toast_pick_character_voice)
             return
         }
         viewModelScope.launch {
@@ -130,13 +133,13 @@ class StudioViewModel(
 
     fun sendImage(uri: Uri) {
         val speaker = currentSpeaker() as? Speaker.Character ?: run {
-            toast("Chọn một nhân vật để gửi ảnh")
+            toast(R.string.toast_pick_character_image)
             return
         }
         viewModelScope.launch {
             val path = repository.importImage(uri, "msg_$storyId")
             if (path == null) {
-                toast("Không đọc được ảnh đã chọn")
+                toast(R.string.toast_image_unreadable)
             } else {
                 repository.addMessage(storyId, speaker.id, MessageType.IMAGE, imagePath = path)
             }
@@ -147,11 +150,11 @@ class StudioViewModel(
     fun updateMessage(message: MessageEntity, text: String, timeLabel: String, voiceSeconds: Int) {
         val needsText = message.type == MessageType.TEXT || message.type == MessageType.NARRATION
         if (needsText && text.isBlank()) {
-            toast("Nội dung không được để trống")
+            toast(R.string.toast_text_empty)
             return
         }
         val label = timeLabel.takeIf { it.isNotBlank() }?.let { TimeLabel.normalize(it) }
-        if (timeLabel.isNotBlank() && label == null) toast("Giờ không hợp lệ, dùng dạng 23:41")
+        if (timeLabel.isNotBlank() && label == null) toast(R.string.toast_time_invalid)
         viewModelScope.launch {
             repository.updateMessage(
                 message.copy(
@@ -200,7 +203,7 @@ class StudioViewModel(
         viewModelScope.launch {
             if (!repository.restoreMessage(message)) {
                 repository.discardImage(message.imagePath)
-                toast("Không khôi phục được tin nhắn này")
+                toast(R.string.toast_restore_failed)
             }
         }
     }
@@ -231,7 +234,7 @@ class StudioViewModel(
         val s = state.value
         val story = s.story ?: return
         if (s.items.isEmpty()) {
-            toast("Kịch bản chưa có tin nhắn để xuất")
+            toast(R.string.toast_nothing_to_export)
             return
         }
         if (exporting.value) return
@@ -246,16 +249,17 @@ class StudioViewModel(
                     showNames = s.isGroup,
                     style = s.style,
                 )
-                if (uris.isEmpty()) toast("Xuất ảnh thất bại") else events.send(StudioEvent.Exported(uris))
+                if (uris.isEmpty()) toast(R.string.toast_export_failed) else events.send(StudioEvent.Exported(uris))
             } catch (e: Exception) {
-                toast("Xuất ảnh thất bại: ${e.message ?: "lỗi không rõ"}")
+                val reason = e.message
+                if (reason.isNullOrBlank()) toast(R.string.toast_export_failed) else toast(R.string.toast_export_failed_reason, reason)
             } finally {
                 exporting.value = false
             }
         }
     }
 
-    private fun toast(message: String) {
-        events.trySend(StudioEvent.Toast(message))
+    private fun toast(@StringRes message: Int, vararg args: Any) {
+        events.trySend(StudioEvent.Toast(UiText(message, args.toList())))
     }
 }

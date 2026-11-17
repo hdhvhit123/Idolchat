@@ -3,11 +3,13 @@ package com.fandom.auchatstudio.ui.characters
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.fandom.auchatstudio.R
 import com.fandom.auchatstudio.core.NameRules
 import com.fandom.auchatstudio.core.RolePalette
 import com.fandom.auchatstudio.data.CharacterEntity
 import com.fandom.auchatstudio.data.ImageStore
 import com.fandom.auchatstudio.data.StudioRepository
+import com.fandom.auchatstudio.i18n.UiText
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -37,8 +39,8 @@ class CharactersViewModel(private val repository: StudioRepository) : ViewModel(
     private val _saving = MutableStateFlow(false)
     val saving: StateFlow<Boolean> = _saving.asStateFlow()
 
-    private val _error = MutableStateFlow<String?>(null)
-    val error: StateFlow<String?> = _error.asStateFlow()
+    private val _error = MutableStateFlow<UiText?>(null)
+    val error: StateFlow<UiText?> = _error.asStateFlow()
 
     fun suggestedColor(): Long = RolePalette.nextFree(characters.value.orEmpty().map { it.roleColorHex })
 
@@ -55,7 +57,7 @@ class CharactersViewModel(private val repository: StudioRepository) : ViewModel(
                         val prefix = "avatar_${existing?.id ?: "new"}"
                         repository.importImage(change.uri, prefix, ImageStore.AVATAR_MAX_SIZE)
                             ?: run {
-                                _error.value = "Không đọc được ảnh đã chọn, giữ nguyên ảnh cũ."
+                                _error.value = UiText(R.string.avatar_unreadable)
                                 existing?.avatarPath
                             }
                     }

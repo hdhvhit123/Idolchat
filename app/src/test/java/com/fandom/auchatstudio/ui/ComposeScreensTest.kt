@@ -37,8 +37,11 @@ import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.annotation.Config
 
+/** Screens are checked against the Vietnamese texts in values-vi. */
 @RunWith(AndroidJUnit4::class)
+@Config(qualifiers = "vi")
 class ComposeScreensTest {
     @get:Rule
     val rule = createComposeRule()

@@ -10,7 +10,7 @@ enum class MessageType {
     /** A picture copied into internal storage. */
     IMAGE,
 
-    /** A centred narrator line ("2 giờ sáng...", "Minho đã xem"). */
+    /** A centred narrator line ("2 a.m.", "Minho has seen it"). */
     NARRATION;
 
     companion object {

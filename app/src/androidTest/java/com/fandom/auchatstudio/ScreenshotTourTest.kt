@@ -25,7 +25,8 @@ import java.io.FileOutputStream
 /**
  * Walks the main journeys and saves a full-screen PNG of each step. AGP copies the files to
  * build/outputs/connected_android_test_additional_output so CI can publish them for review.
- * Run it on its own (class filter) so the app starts from the seeded sample data.
+ * Run it on its own (class filter) so the app starts from the seeded sample data. Words are
+ * looked up in the app's resources, so the tour runs in the device's language.
  */
 @OptIn(ExperimentalTestApi::class)
 @RunWith(AndroidJUnit4::class)
@@ -34,6 +35,13 @@ class ScreenshotTourTest {
     val rule = createAndroidComposeRule<MainActivity>()
 
     private val instrumentation get() = InstrumentationRegistry.getInstrumentation()
+    private val context get() = instrumentation.targetContext
+
+    /** The sample is seeded in the device's language on first launch. */
+    private val sampleTitle: String get() = context.getString(R.string.sample_title)
+    private val sampleLine: String get() = context.resources.getStringArray(R.array.sample_lines)[1]
+    private val narratorChip: String get() = context.getString(R.string.cd_speaker, context.getString(R.string.narrator))
+    private val charactersButton: String get() = context.getString(R.string.cd_characters)
 
     private val outputDir: File by lazy {
         val fromAgp = InstrumentationRegistry.getArguments().getString("additionalTestOutputDir")
@@ -76,9 +84,9 @@ class ScreenshotTourTest {
      */
     private fun openSampleStory() {
         waitForHome()
-        rule.onNodeWithTag("home_list").performScrollToNode(hasText(SAMPLE_TITLE))
-        rule.onNodeWithText(SAMPLE_TITLE).performClick()
-        rule.waitUntilAtLeastOneExists(hasText("Còn thức không đó?"), 10_000)
+        rule.onNodeWithTag("home_list").performScrollToNode(hasText(sampleTitle))
+        rule.onNodeWithText(sampleTitle).performClick()
+        rule.waitUntilAtLeastOneExists(hasText(sampleLine), 10_000)
     }
 
     @Test
@@ -100,7 +108,7 @@ class ScreenshotTourTest {
         shot("05_studio_instagram")
         rule.onNodeWithTag("cycle_theme").performClick()
 
-        rule.onNodeWithText("Còn thức không đó?").performClick()
+        rule.onNodeWithText(sampleLine).performClick()
         rule.waitUntilAtLeastOneExists(hasTestTag("delete_message"), 5_000)
         shot("06_message_actions")
         Espresso.pressBack()
@@ -110,8 +118,8 @@ class ScreenshotTourTest {
         Espresso.closeSoftKeyboard()
 
         // With a long cast the narrator chip is off screen and not composed yet.
-        rule.onNodeWithTag("director_switcher").performScrollToNode(hasContentDescription("Người nói: Dẫn truyện"))
-        rule.onNodeWithContentDescription("Người nói: Dẫn truyện").performClick()
+        rule.onNodeWithTag("director_switcher").performScrollToNode(hasContentDescription(narratorChip))
+        rule.onNodeWithContentDescription(narratorChip).performClick()
         rule.waitUntilAtLeastOneExists(hasTestTag("narration_presets"), 5_000)
         shot("07b_studio_narrator")
 
@@ -134,7 +142,7 @@ class ScreenshotTourTest {
         Espresso.pressBack()
 
         rule.waitUntilAtLeastOneExists(hasTestTag("fab_new_story"), 5_000)
-        rule.onNodeWithContentDescription("Nhân vật").performClick()
+        rule.onNodeWithContentDescription(charactersButton).performClick()
         rule.waitUntilAtLeastOneExists(hasTestTag("fab_add_character"), 5_000)
         shot("11_characters")
         rule.onNodeWithText("Hyunjin").performClick()
@@ -152,15 +160,11 @@ class ScreenshotTourTest {
             shot("21_studio_dark")
             Espresso.pressBack()
             rule.waitUntilAtLeastOneExists(hasTestTag("fab_new_story"), 5_000)
-            rule.onNodeWithContentDescription("Nhân vật").performClick()
+            rule.onNodeWithContentDescription(charactersButton).performClick()
             rule.waitUntilAtLeastOneExists(hasTestTag("fab_add_character"), 5_000)
             shot("22_characters_dark")
         } finally {
             shell("cmd uimode night no")
         }
-    }
-
-    private companion object {
-        const val SAMPLE_TITLE = "Tin nhắn lúc nửa đêm"
     }
 }

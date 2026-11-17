@@ -37,18 +37,14 @@ object ExportPaging {
 }
 
 /**
- * The app's public name in one place. The name says what the app does; the tagline says it in
- * Vietnamese for anyone who does not read the English. The launcher label (res/values/strings.xml)
- * must be kept in step by hand, since resources cannot read Kotlin constants.
+ * The app's public name in one place. The name is the same in every language; everything the
+ * user reads around it (tagline, watermark) lives in the app's string resources, translated.
+ * The launcher label (res/values/strings.xml) must be kept in step by hand, since resources
+ * cannot read Kotlin constants.
  */
 object Brand {
     const val NAME = "Idol Chat Maker"
-    const val TAGLINE = "Tạo truyện chat idol, xuất thành ảnh"
 
-    /** Folder under Pictures/ that exported images are saved to. */
+    /** Folder under Pictures/ that exported images are saved to. Not translated, so it never moves. */
     const val EXPORT_FOLDER = NAME
-}
-
-object Watermark {
-    const val TEXT = "Nội dung hư cấu tạo bởi ${Brand.NAME}"
 }

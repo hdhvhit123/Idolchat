@@ -4,7 +4,7 @@ name: Screenshots
 # branch (always replaced with the latest set) so UI changes can be reviewed visually.
 on:
   push:
-    branches: [ui-upgrade]
+    branches: [ui-upgrade, i18n]
   workflow_dispatch:
 
 concurrency:
@@ -89,3 +89,59 @@ jobs:
           git add .
           git -c user.name="github-actions" -c user.email="github-actions@users.noreply.github.com" commit -qm "Screenshots for $GITHUB_SHA"
           git push -f "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" ci-screenshots
+
+  locales:
+    name: Screenshot tour per language · API 34
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Build test APKs
+        run: ./gradlew :app:assembleDebug :app:assembleDebugAndroidTest
+
+      # The phone stays in English; each run switches the app's own language (Android 13+),
+      # the same setting people reach from Settings > Apps > Idol Chat > Language.
+      - name: Run the tour in every language
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -no-snapshot
+          script: |
+            adb shell settings put global hide_error_dialogs 1
+            bash tools/ci/locale-tour.sh
+
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots-locales
+          path: shots/
+
+      - name: Publish to ci-screenshots-locales branch
+        if: always()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          [ -n "$(ls -A shots 2>/dev/null)" ] || { echo "no screenshots"; exit 0; }
+          cd shots
+          echo "Screenshots per language of $GITHUB_SHA ($GITHUB_REF_NAME)" > README.md
+          git init -q -b ci-screenshots-locales
+          git add .
+          git -c user.name="github-actions" -c user.email="github-actions@users.noreply.github.com" commit -qm "Screenshots per language for $GITHUB_SHA"
+          git push -f "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" ci-screenshots-locales

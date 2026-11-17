@@ -55,9 +55,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -66,6 +68,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.fandom.auchatstudio.R
 import com.fandom.auchatstudio.ui.appContainer
 import com.fandom.auchatstudio.ui.chat.ChatHeader
 import com.fandom.auchatstudio.ui.chat.ChatMessageRow
@@ -110,6 +113,7 @@ fun PlayerContent(
         if (revealed > 0) haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
     }
 
+    val nextLabel = stringResource(R.string.player_next_action)
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -117,7 +121,7 @@ fun PlayerContent(
             // Tap anywhere to advance. Not `clickable`, which would merge every bubble and
             // button into one accessibility node.
             .pointerInput(onTap) { detectTapGestures(onTap = { onTap() }) }
-            .semantics { onClick(label = "Xem tin nhắn tiếp theo") { onTap(); true } }
+            .semantics { onClick(label = nextLabel) { onTap(); true } }
             .testTag("player_surface"),
     ) {
         Column(Modifier.fillMaxSize()) {
@@ -211,10 +215,10 @@ private fun StartHint(total: Int, accent: Color, onAccent: Color, textColor: Col
             }
         }
         Spacer(Modifier.height(20.dp))
-        Text("Chạm để bắt đầu", color = textColor, fontWeight = FontWeight.SemiBold, fontSize = 18.sp)
+        Text(stringResource(R.string.player_tap_to_start), color = textColor, fontWeight = FontWeight.SemiBold, fontSize = 18.sp)
         Spacer(Modifier.height(4.dp))
         Text(
-            "$total tin nhắn · mỗi lần chạm hiện một tin",
+            pluralStringResource(R.plurals.player_start_hint, total, total),
             color = textColor.copy(alpha = 0.85f),
             fontSize = 13.sp,
             textAlign = TextAlign.Center,
@@ -262,14 +266,14 @@ private fun BottomBar(
     ) {
         if (state.playback.isFinished && !state.loading) {
             Text(
-                if (state.playback.total == 0) "Kịch bản chưa có tin nhắn" else "— Hết —",
+                stringResource(if (state.playback.total == 0) R.string.player_empty else R.string.player_the_end),
                 color = Color(style.headerContent),
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.testTag("player_finished"),
             )
             Spacer(Modifier.height(8.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                OutlinedButton(onClick = onBack) { Text("Thoát", color = Color(style.headerContent)) }
+                OutlinedButton(onClick = onBack) { Text(stringResource(R.string.player_exit), color = Color(style.headerContent)) }
                 FilledTonalButton(
                     onClick = onRestart,
                     colors = ButtonDefaults.filledTonalButtonColors(
@@ -280,7 +284,7 @@ private fun BottomBar(
                 ) {
                     Icon(Icons.Filled.Replay, null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(6.dp))
-                    Text("Xem lại")
+                    Text(stringResource(R.string.player_replay))
                 }
             }
         } else {
@@ -291,11 +295,12 @@ private fun BottomBar(
                 animationSpec = infiniteRepeatable(tween(900), RepeatMode.Reverse),
                 label = "hintAlpha",
             )
+            val autoPlayLabel = stringResource(R.string.player_auto_play_action)
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                 Icon(Icons.Outlined.TouchApp, null, tint = subtle, modifier = Modifier.size(18.dp).alpha(hintAlpha))
                 Spacer(Modifier.width(6.dp))
                 Text(
-                    "Chạm để xem tin tiếp theo · ${state.playback.revealed}/${state.playback.total}",
+                    stringResource(R.string.player_progress_hint, state.playback.revealed, state.playback.total),
                     color = subtle,
                     fontSize = 13.sp,
                     modifier = Modifier.weight(1f).alpha(hintAlpha),
@@ -304,10 +309,10 @@ private fun BottomBar(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .clip(RoundedCornerShape(50))
-                        .semantics { onClick(label = "Tự động phát") { onAutoPlay(!state.autoPlay); true } }
+                        .semantics { onClick(label = autoPlayLabel) { onAutoPlay(!state.autoPlay); true } }
                         .padding(start = 8.dp),
                 ) {
-                    Text("Tự phát", color = subtle, fontSize = 13.sp)
+                    Text(stringResource(R.string.player_auto_play), color = subtle, fontSize = 13.sp)
                     Spacer(Modifier.width(6.dp))
                     Switch(
                         checked = state.autoPlay,

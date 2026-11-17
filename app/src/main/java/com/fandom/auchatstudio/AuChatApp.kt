@@ -7,6 +7,7 @@ import com.fandom.auchatstudio.data.FileStore
 import com.fandom.auchatstudio.data.SharedAppPrefs
 import com.fandom.auchatstudio.data.StudioRepository
 import com.fandom.auchatstudio.export.ChatExporter
+import com.fandom.auchatstudio.i18n.ResourceRepositoryStrings
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -15,7 +16,7 @@ import kotlinx.coroutines.launch
 /** Manual dependency container: the app is small enough that a DI framework isn't worth it. */
 class AppContainer(app: Application) {
     val database: AppDatabase by lazy { AppDatabase.getDatabase(app) }
-    val repository: StudioRepository by lazy { StudioRepository(database, FileStore(app)) }
+    val repository: StudioRepository by lazy { StudioRepository(database, FileStore(app), strings = ResourceRepositoryStrings(app)) }
     val exporter: ChatExporter by lazy { ChatExporter(app) }
     val prefs: AppPrefs by lazy { SharedAppPrefs(app) }
 }

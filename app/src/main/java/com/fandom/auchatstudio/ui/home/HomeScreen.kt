@@ -1,6 +1,5 @@
 package com.fandom.auchatstudio.ui.home
 
-import com.fandom.auchatstudio.core.Brand
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -70,7 +69,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -80,13 +82,17 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.fandom.auchatstudio.R
+import com.fandom.auchatstudio.core.Brand
 import com.fandom.auchatstudio.core.MessageType
 import com.fandom.auchatstudio.core.NameRules
 import com.fandom.auchatstudio.core.StoryTemplate
-import com.fandom.auchatstudio.core.StoryTemplates
 import com.fandom.auchatstudio.core.ThemePreset
 import com.fandom.auchatstudio.data.CharacterEntity
 import com.fandom.auchatstudio.data.StorySummary
+import com.fandom.auchatstudio.i18n.descriptionRes
+import com.fandom.auchatstudio.i18n.rememberStoryTemplates
+import com.fandom.auchatstudio.i18n.resolve
 import com.fandom.auchatstudio.ui.appContainer
 import com.fandom.auchatstudio.ui.chat.ChatStyle
 import com.fandom.auchatstudio.ui.chat.ThemeSwatch
@@ -108,10 +114,11 @@ fun HomeScreen(
     val vm: HomeViewModel = viewModel { HomeViewModel(container.repository, container.prefs) }
     val state by vm.state.collectAsStateWithLifecycle()
     val snackbar = remember { SnackbarHostState() }
+    val context = LocalContext.current
     LaunchedEffect(vm) {
         vm.messageFlow.collect {
             snackbar.currentSnackbarData?.dismiss()
-            snackbar.showSnackbar(it)
+            snackbar.showSnackbar(it.resolve(context))
         }
     }
     HomeContent(
@@ -152,6 +159,7 @@ fun HomeContent(
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val latest = state.latest
     val others = state.stories.drop(1)
+    val templates = rememberStoryTemplates()
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -161,7 +169,7 @@ fun HomeContent(
                     Column {
                         Text(Brand.NAME, style = MaterialTheme.typography.titleLarge)
                         Text(
-                            Brand.TAGLINE,
+                            stringResource(R.string.app_tagline),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,
@@ -171,7 +179,7 @@ fun HomeContent(
                 },
                 actions = {
                     FilledTonalIconButton(onClick = onOpenCharacters, modifier = Modifier.padding(end = 8.dp)) {
-                        Icon(Icons.Outlined.Groups, contentDescription = "Nhân vật")
+                        Icon(Icons.Outlined.Groups, contentDescription = stringResource(R.string.cd_characters))
                     }
                 },
                 scrollBehavior = scrollBehavior,
@@ -182,7 +190,7 @@ fun HomeContent(
                 onClick = { showCreate = true },
                 expanded = fabExpanded,
                 icon = { Icon(Icons.Filled.Add, contentDescription = null) },
-                text = { Text("Kịch bản mới") },
+                text = { Text(stringResource(R.string.new_story)) },
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary,
                 modifier = Modifier.testTag("fab_new_story"),
@@ -229,14 +237,14 @@ fun HomeContent(
             item(key = "templates") {
                 Column {
                     SectionHeader(
-                        "Bắt đầu nhanh từ mẫu",
+                        stringResource(R.string.section_templates),
                         Modifier.padding(start = Space.screen, end = Space.sm, top = Space.md),
                     )
                     LazyRow(
                         contentPadding = PaddingValues(horizontal = Space.screen),
                         horizontalArrangement = Arrangement.spacedBy(Space.md),
                     ) {
-                        items(StoryTemplates.all, key = { it.id }) { template ->
+                        items(templates, key = { it.id }) { template ->
                             TemplateCard(template, onClick = { onUseTemplate(template) })
                         }
                     }
@@ -245,9 +253,9 @@ fun HomeContent(
             item(key = "cast") {
                 Column {
                     SectionHeader(
-                        "Dàn nhân vật",
+                        stringResource(R.string.cast_title),
                         Modifier.padding(start = Space.screen, end = Space.sm, top = Space.md),
-                        actionLabel = "Quản lý",
+                        actionLabel = stringResource(R.string.action_manage),
                         onAction = onOpenCharacters,
                     )
                     CastStrip(state.characters, onOpenCharacters)
@@ -256,7 +264,7 @@ fun HomeContent(
             if (others.isNotEmpty()) {
                 item(key = "others_header") {
                     SectionHeader(
-                        "Kịch bản khác",
+                        stringResource(R.string.section_other_stories),
                         Modifier.padding(start = Space.screen, end = Space.sm, top = Space.md),
                     )
                 }
@@ -289,10 +297,10 @@ fun HomeContent(
     }
     renaming?.let { s ->
         TextInputDialog(
-            title = "Đổi tên kịch bản",
-            label = "Tên kịch bản",
+            title = stringResource(R.string.rename_story),
+            label = stringResource(R.string.story_name),
             initial = s.story.title,
-            confirmText = "Lưu",
+            confirmText = stringResource(R.string.action_save),
             maxLength = NameRules.MAX_TITLE_LENGTH,
             onDismiss = { renaming = null },
             onConfirm = {
@@ -303,9 +311,9 @@ fun HomeContent(
     }
     deleting?.let { s ->
         ConfirmDialog(
-            title = "Xóa kịch bản?",
-            message = "\"${s.story.title}\" và ${s.messageCount} tin nhắn sẽ bị xóa vĩnh viễn khỏi máy.",
-            confirmText = "Xóa",
+            title = stringResource(R.string.delete_story_title),
+            message = pluralStringResource(R.plurals.delete_story_message, s.messageCount, s.story.title, s.messageCount),
+            confirmText = stringResource(R.string.action_delete),
             onDismiss = { deleting = null },
             onConfirm = {
                 onDeleteStory(s.story.id)
@@ -330,12 +338,12 @@ private fun ContinueCard(
             .fillMaxWidth()
             .clip(MaterialTheme.shapes.large)
             .background(BrandGradient)
-            .clickable(onClickLabel = "Viết tiếp", onClick = onOpen)
+            .clickable(onClickLabel = stringResource(R.string.continue_writing), onClick = onOpen)
             .padding(start = 20.dp, end = 8.dp, top = 8.dp, bottom = 20.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                "VIẾT TIẾP",
+                stringResource(R.string.continue_label),
                 style = MaterialTheme.typography.labelMedium,
                 color = Color.White.copy(alpha = 0.9f),
                 modifier = Modifier.weight(1f),
@@ -365,9 +373,9 @@ private fun ContinueCard(
             )
             Spacer(Modifier.height(Space.lg))
             Row(horizontalArrangement = Arrangement.spacedBy(Space.sm)) {
-                HeroButton("Viết tiếp", filled = true, icon = Icons.Outlined.Edit, onClick = onOpen)
+                HeroButton(stringResource(R.string.continue_writing), filled = true, icon = Icons.Outlined.Edit, onClick = onOpen)
                 if (summary.messageCount > 0) {
-                    HeroButton("Phát", filled = false, icon = Icons.Filled.PlayArrow, onClick = onPlay)
+                    HeroButton(stringResource(R.string.action_play), filled = false, icon = Icons.Filled.PlayArrow, onClick = onPlay)
                 }
             }
         }
@@ -408,16 +416,16 @@ private fun FirstStoryCard(onCreate: () -> Unit) {
         Column(Modifier.padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             ChatBubblesArt()
             Spacer(Modifier.height(Space.md))
-            Text("Chưa có kịch bản nào", style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.no_stories_title), style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(Space.xs))
             Text(
-                "Chọn một mẫu bên dưới để có ngay đoạn chat hoàn chỉnh, hoặc tự viết từ đầu.",
+                stringResource(R.string.no_stories_message),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
             )
             Spacer(Modifier.height(Space.md))
-            TextButton(onClick = onCreate) { Text("Tự viết từ đầu") }
+            TextButton(onClick = onCreate) { Text(stringResource(R.string.write_from_scratch)) }
         }
     }
 }
@@ -433,14 +441,14 @@ private fun GuideCard(onDismiss: () -> Unit, modifier: Modifier = Modifier) {
     ) {
         Column(Modifier.padding(start = 20.dp, end = 8.dp, top = 8.dp, bottom = 16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("3 bước để có một đoạn chat", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+                Text(stringResource(R.string.guide_title), style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
                 IconButton(onClick = onDismiss, modifier = Modifier.testTag("guide_dismiss")) {
-                    Icon(Icons.Outlined.Close, contentDescription = "Ẩn hướng dẫn")
+                    Icon(Icons.Outlined.Close, contentDescription = stringResource(R.string.cd_hide_guide))
                 }
             }
-            GuideStep(1, "Chọn ai đang nói ở thanh dưới cùng")
-            GuideStep(2, "Gõ tin nhắn. Chạm vào tin đã gửi để sửa hoặc xóa")
-            GuideStep(3, "Bấm ▶ để xem lại từng tin như đang chat thật")
+            GuideStep(1, stringResource(R.string.guide_step_1))
+            GuideStep(2, stringResource(R.string.guide_step_2))
+            GuideStep(3, stringResource(R.string.guide_step_3))
         }
     }
 }
@@ -489,7 +497,7 @@ private fun TemplateCard(template: StoryTemplate, onClick: () -> Unit) {
             )
             Spacer(Modifier.height(Space.sm))
             Text(
-                "${template.lines.size} tin · ${template.theme.displayName}",
+                pluralStringResource(R.plurals.template_meta, template.lines.size, template.lines.size, template.theme.displayName),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.primary,
             )
@@ -504,10 +512,10 @@ private fun CastStrip(characters: List<CharacterEntity>, onOpenCharacters: () ->
         horizontalArrangement = Arrangement.spacedBy(Space.sm),
         modifier = Modifier.testTag("cast_strip"),
     ) {
-        // "Thêm" leads the row: at the end it sat under the "Kịch bản mới" button whenever the
+        // "Add" leads the row: at the end it sat under the "New story" button whenever the
         // cast filled the width of the screen.
         item(key = "add") {
-            CastItem(label = "Thêm", onClick = onOpenCharacters) {
+            CastItem(label = stringResource(R.string.action_add), onClick = onOpenCharacters) {
                 Box(
                     Modifier
                         .size(52.dp)
@@ -527,13 +535,14 @@ private fun CastStrip(characters: List<CharacterEntity>, onOpenCharacters: () ->
 
 @Composable
 private fun CastItem(label: String, onClick: () -> Unit, avatar: @Composable () -> Unit) {
+    val description = stringResource(R.string.cd_cast_member, label)
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
             .width(68.dp)
             .clip(MaterialTheme.shapes.small)
             .clickable(role = Role.Button, onClick = onClick)
-            .semantics(mergeDescendants = true) { contentDescription = "Dàn nhân vật: $label" }
+            .semantics(mergeDescendants = true) { contentDescription = description }
             .padding(vertical = 6.dp),
     ) {
         avatar()
@@ -587,7 +596,7 @@ private fun StoryCard(
             }
             if (summary.messageCount > 0) {
                 FilledTonalIconButton(onClick = onPlay) {
-                    Icon(Icons.Filled.PlayArrow, contentDescription = "Phát ${summary.story.title}")
+                    Icon(Icons.Filled.PlayArrow, contentDescription = stringResource(R.string.cd_play_named, summary.story.title))
                 }
             }
             StoryMenu(summary.story.title, onRename, onDuplicate, onDelete, tint = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -606,21 +615,21 @@ private fun StoryMenu(
     var open by remember { mutableStateOf(false) }
     Box {
         IconButton(onClick = { open = true }) {
-            Icon(Icons.Outlined.MoreVert, contentDescription = "Tùy chọn $title", tint = tint)
+            Icon(Icons.Outlined.MoreVert, contentDescription = stringResource(R.string.cd_options_named, title), tint = tint)
         }
         DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
             DropdownMenuItem(
-                text = { Text("Đổi tên") },
+                text = { Text(stringResource(R.string.action_rename)) },
                 leadingIcon = { Icon(Icons.Outlined.Edit, null) },
                 onClick = { open = false; onRename() },
             )
             DropdownMenuItem(
-                text = { Text("Nhân bản") },
+                text = { Text(stringResource(R.string.action_duplicate)) },
                 leadingIcon = { Icon(Icons.Outlined.ContentCopy, null) },
                 onClick = { open = false; onDuplicate() },
             )
             DropdownMenuItem(
-                text = { Text("Xóa", color = MaterialTheme.colorScheme.error) },
+                text = { Text(stringResource(R.string.action_delete), color = MaterialTheme.colorScheme.error) },
                 leadingIcon = { Icon(Icons.Outlined.Delete, null, tint = MaterialTheme.colorScheme.error) },
                 onClick = { open = false; onDelete() },
             )
@@ -628,16 +637,18 @@ private fun StoryMenu(
     }
 }
 
+@Composable
 private fun previewOf(summary: StorySummary): String = when {
-    summary.messageCount == 0 -> "Chưa có tin nhắn"
-    summary.lastType == MessageType.VOICE -> "🎙 Tin nhắn thoại"
-    summary.lastType == MessageType.IMAGE -> "🖼 Ảnh"
+    summary.messageCount == 0 -> stringResource(R.string.preview_no_messages)
+    summary.lastType == MessageType.VOICE -> stringResource(R.string.preview_voice)
+    summary.lastType == MessageType.IMAGE -> stringResource(R.string.preview_photo)
     summary.lastText.isNullOrBlank() -> "…"
     else -> summary.lastText
 }
 
+@Composable
 private fun metaOf(summary: StorySummary): String =
-    "${summary.story.theme.displayName} · ${summary.messageCount} tin nhắn"
+    pluralStringResource(R.plurals.story_meta, summary.messageCount, summary.story.theme.displayName, summary.messageCount)
 
 @Composable
 fun NewStoryDialog(onDismiss: () -> Unit, onCreate: (String, ThemePreset) -> Unit) {
@@ -645,21 +656,21 @@ fun NewStoryDialog(onDismiss: () -> Unit, onCreate: (String, ThemePreset) -> Uni
     var theme by rememberSaveable { mutableStateOf(ThemePreset.Default) }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Kịch bản mới") },
+        title = { Text(stringResource(R.string.new_story)) },
         text = {
             Column {
                 OutlinedTextField(
                     value = title,
                     onValueChange = { if (it.length <= NameRules.MAX_TITLE_LENGTH) title = it },
-                    label = { Text("Tên kịch bản") },
-                    placeholder = { Text("VD: Hẹn hò sau concert") },
-                    supportingText = { Text("Có thể bỏ trống và đặt tên sau") },
+                    label = { Text(stringResource(R.string.story_name)) },
+                    placeholder = { Text(stringResource(R.string.story_name_example)) },
+                    supportingText = { Text(stringResource(R.string.story_name_optional)) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
                     modifier = Modifier.fillMaxWidth().testTag("new_story_title"),
                 )
                 Spacer(Modifier.height(Space.md))
-                Text("Phong cách khung chat", style = MaterialTheme.typography.labelLarge)
+                Text(stringResource(R.string.chat_style), style = MaterialTheme.typography.labelLarge)
                 Spacer(Modifier.height(Space.sm))
                 Row(Modifier.selectableGroup(), horizontalArrangement = Arrangement.spacedBy(Space.sm)) {
                     ThemePreset.entries.forEach { preset ->
@@ -673,16 +684,16 @@ fun NewStoryDialog(onDismiss: () -> Unit, onCreate: (String, ThemePreset) -> Uni
                 }
                 Spacer(Modifier.height(Space.sm))
                 Text(
-                    "${theme.tagline}. Đổi được bất cứ lúc nào.",
+                    stringResource(R.string.theme_description_hint, stringResource(theme.descriptionRes())),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         },
         confirmButton = {
-            TextButton(onClick = { onCreate(title, theme) }, modifier = Modifier.testTag("new_story_confirm")) { Text("Tạo") }
+            TextButton(onClick = { onCreate(title, theme) }, modifier = Modifier.testTag("new_story_confirm")) { Text(stringResource(R.string.action_create)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Hủy") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } },
     )
 }
 

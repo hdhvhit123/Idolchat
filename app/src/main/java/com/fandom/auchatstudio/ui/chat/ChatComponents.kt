@@ -50,6 +50,7 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -60,6 +61,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.fandom.auchatstudio.R
 import com.fandom.auchatstudio.core.MessageType
 import com.fandom.auchatstudio.core.ThemePreset
 import com.fandom.auchatstudio.core.VoiceFormat
@@ -166,7 +168,7 @@ fun ChatMessageRow(
     ) {
         if (showSenderName && !item.outgoing && item.firstInRun) {
             Text(
-                text = item.speaker?.name ?: "Không rõ",
+                text = item.speaker?.name ?: stringResource(R.string.unknown_speaker),
                 color = Color(style.senderName),
                 style = ChatTextStyle,
                 fontSize = 12.sp,
@@ -229,7 +231,7 @@ private fun MessageBubble(item: ChatItem, style: ChatStyle) {
                 if (path != null) {
                     AsyncImage(
                         model = ImageRequest.Builder(LocalContext.current).data(File(path)).crossfade(true).build(),
-                        contentDescription = "Ảnh trong tin nhắn",
+                        contentDescription = stringResource(R.string.cd_message_photo),
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.widthIn(min = 120.dp, max = 220.dp).heightIn(min = 120.dp, max = 280.dp),
                     )
@@ -237,11 +239,13 @@ private fun MessageBubble(item: ChatItem, style: ChatStyle) {
             }
         }
 
-        MessageType.VOICE -> Row(
+        MessageType.VOICE -> {
+            val voiceLabel = stringResource(R.string.cd_voice_message, VoiceFormat.format(m.voiceSeconds))
+            Row(
             modifier = Modifier
                 .bubbleSurface(style, item.outgoing, shape)
                 .padding(horizontal = 12.dp, vertical = 10.dp)
-                .semantics { contentDescription = "Tin nhắn thoại ${VoiceFormat.format(m.voiceSeconds)}" },
+                .semantics { contentDescription = voiceLabel },
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Box(
@@ -254,6 +258,7 @@ private fun MessageBubble(item: ChatItem, style: ChatStyle) {
             AudioWaveformMock(color = textColor.copy(alpha = 0.9f), modifier = Modifier.width(110.dp).height(26.dp))
             Spacer(Modifier.width(8.dp))
             Text(VoiceFormat.format(m.voiceSeconds), color = textColor, style = ChatTextStyle, fontSize = 12.sp)
+        }
         }
 
         else -> Text(
@@ -283,11 +288,12 @@ fun TypingIndicatorRow(
         label = "phase",
     )
     val dotColor = Color(if (outgoing) style.outgoingText else style.incomingText)
+    val typingLabel = stringResource(R.string.cd_typing)
     Row(
         modifier = modifier
             .fillMaxWidth()
             .padding(start = 12.dp, end = 12.dp, top = 8.dp)
-            .semantics { contentDescription = "Đang soạn tin" },
+            .semantics { contentDescription = typingLabel },
         horizontalArrangement = if (outgoing) Arrangement.End else Arrangement.Start,
         verticalAlignment = Alignment.Bottom,
     ) {
@@ -349,13 +355,13 @@ fun ChatHeader(
     ) {
         if (onBack != null) {
             IconButton(onClick = onBack) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Quay lại", tint = content)
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.cd_back), tint = content)
             }
         } else {
             Spacer(Modifier.width(12.dp))
         }
         val titleClick = if (onTitleClick != null) {
-            Modifier.clip(RoundedCornerShape(12.dp)).clickable(onClickLabel = "Đổi tên trên khung chat", onClick = onTitleClick)
+            Modifier.clip(RoundedCornerShape(12.dp)).clickable(onClickLabel = stringResource(R.string.rename_chat_title_action), onClick = onTitleClick)
         } else {
             Modifier
         }
@@ -367,7 +373,7 @@ fun ChatHeader(
             Spacer(Modifier.width(10.dp))
             Column(Modifier.weight(1f)) {
                 Text(
-                    title,
+                    title.ifEmpty { stringResource(R.string.chat_title_fallback) },
                     color = content,
                     style = ChatTextStyle,
                     fontWeight = FontWeight.SemiBold,
@@ -383,9 +389,9 @@ fun ChatHeader(
                 } else {
                     Text(
                         text = when (style.preset) {
-                            ThemePreset.LYSN_BUBBLE -> "Bubble · đang hoạt động"
-                            ThemePreset.WEVERSE_DM -> "● Online"
-                            ThemePreset.INSTAGRAM_DM -> "Đang hoạt động"
+                            ThemePreset.LYSN_BUBBLE -> stringResource(R.string.status_bubble_active)
+                            ThemePreset.WEVERSE_DM -> stringResource(R.string.status_online)
+                            ThemePreset.INSTAGRAM_DM -> stringResource(R.string.status_active)
                         },
                         color = Color(style.headerSubtle),
                         style = ChatTextStyle,

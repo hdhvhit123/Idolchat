@@ -16,8 +16,6 @@ class StoryTemplatesTest {
     fun `every template is a playable script`() {
         assertThat(StoryTemplates.all).isNotEmpty()
         StoryTemplates.all.forEach { template ->
-            assertThat(template.title).isNotEmpty()
-            assertThat(template.title.length).isAtMost(NameRules.MAX_TITLE_LENGTH)
             assertThat(template.lines.size).isAtLeast(4)
             // Both sides of the conversation appear, otherwise the chat looks one-sided.
             assertThat(template.lines.map { it.role }).containsAtLeast(TemplateRole.IDOL, TemplateRole.USER)
@@ -28,11 +26,8 @@ class StoryTemplatesTest {
     fun `lines are well formed for their type`() {
         StoryTemplates.all.flatMap { it.lines }.forEach { line ->
             when (line.type) {
-                MessageType.TEXT -> assertThat(line.text).isNotEmpty()
-                MessageType.NARRATION -> {
-                    assertThat(line.role).isEqualTo(TemplateRole.NARRATOR)
-                    assertThat(line.text).isNotEmpty()
-                }
+                MessageType.TEXT -> assertThat(line.role).isNotEqualTo(TemplateRole.NARRATOR)
+                MessageType.NARRATION -> assertThat(line.role).isEqualTo(TemplateRole.NARRATOR)
                 MessageType.VOICE ->
                     assertThat(line.voiceSeconds).isIn(VoiceFormat.MIN_SECONDS..VoiceFormat.MAX_SECONDS)
                 MessageType.IMAGE -> throw AssertionError("Templates cannot ship images")
@@ -43,8 +38,25 @@ class StoryTemplatesTest {
     }
 
     @Test
-    fun `narration presets are short and distinct`() {
-        assertThat(NarrationPresets.all).containsNoDuplicates()
-        NarrationPresets.all.forEach { assertThat(it.length).isAtMost(20) }
+    fun `localized fills the words in script order and leaves voice notes alone`() {
+        val template = StoryTemplates.byId("good_night")!!
+        val words = (1..template.textSlots).map { "line $it" }
+        val filled = template.localized("Good night", "A voice note at midnight", words)
+
+        assertThat(filled.title).isEqualTo("Good night")
+        assertThat(filled.hook).isEqualTo("A voice note at midnight")
+        assertThat(filled.lines.filter { it.type != MessageType.VOICE }.map { it.text }).isEqualTo(words)
+        val voice = filled.lines.single { it.type == MessageType.VOICE }
+        assertThat(voice.text).isEmpty()
+        assertThat(voice.voiceSeconds).isEqualTo(9)
+        // The shape of the script is untouched.
+        assertThat(filled.lines.map { it.role }).isEqualTo(template.lines.map { it.role })
+        assertThat(filled.lines.map { it.timeLabel }).isEqualTo(template.lines.map { it.timeLabel })
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `localized refuses a translation with the wrong number of lines`() {
+        val template = StoryTemplates.byId("secret_dm")!!
+        template.localized("t", "h", List(template.textSlots - 1) { "x" })
     }
 }
