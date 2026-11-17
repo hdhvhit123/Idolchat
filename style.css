@@ -1,6 +1,6 @@
-@font-face{font-family:"Be Vietnam Pro";src:url("fonts/be_vietnam_pro_regular.ttf");font-weight:400}
-@font-face{font-family:"Be Vietnam Pro";src:url("fonts/be_vietnam_pro_semibold.ttf");font-weight:600}
-@font-face{font-family:"Be Vietnam Pro";src:url("fonts/be_vietnam_pro_bold.ttf");font-weight:700}
+@font-face{font-family:"Be Vietnam Pro";src:url("fonts/be_vietnam_pro_regular.ttf");font-weight:400;font-display:swap}
+@font-face{font-family:"Be Vietnam Pro";src:url("fonts/be_vietnam_pro_semibold.ttf");font-weight:600;font-display:swap}
+@font-face{font-family:"Be Vietnam Pro";src:url("fonts/be_vietnam_pro_bold.ttf");font-weight:700;font-display:swap}
 :root{--bg:#faf8ff;--surface:#ffffff;--text:#1b1a24;--muted:#5d5a6e;--line:#e6e1f5;--brand:#6c4dff;--grad:linear-gradient(135deg,#6c4dff,#c2337f)}
 @media (prefers-color-scheme:dark){:root{--bg:#121019;--surface:#1c1a26;--text:#ece9f6;--muted:#a9a4bd;--line:#2e2a3d;--brand:#a996ff}}
 *{box-sizing:border-box}
