@@ -1,4 +1,6 @@
-# AU Chat Studio
+# Idol Chat Maker
+
+*Tạo truyện chat idol, xuất thành ảnh.* (Tên cũ: AU Chat Studio; mã ứng dụng `com.fandom.auchatstudio` giữ nguyên để cài đè không mất dữ liệu.)
 
 Ứng dụng Android **100% ngoại tuyến** để dàn dựng kịch bản tin nhắn fanfic Alternate Universe (AU) và mô phỏng chat với thần tượng, xây dựng theo tài liệu *“AU Chat Studio — Hồ sơ thiết kế & phát triển”*.
 
@@ -14,7 +16,7 @@
 | **Biên tập** | Chạm vào tin nhắn để sửa, đổi người nói, đổi thứ tự, xóa (có **Hoàn tác**). Chat nhóm tự hiện tên người gửi. |
 | **Bắt đầu nhanh** | Trang chủ có thẻ **Viết tiếp** cho kịch bản gần nhất, 4 **mẫu kịch bản** dựng sẵn (tự gán vào dàn nhân vật của bạn), **Nhân bản** kịch bản và hướng dẫn 3 bước cho lần đầu mở app. |
 | **Lời dẫn một chạm** | Khi chọn người dẫn truyện, các câu hay dùng ("Đã xem", "Hôm sau"…) gửi được bằng một lần chạm. |
-| **Xuất ảnh cuộn dài** | Vẽ toàn bộ hội thoại trên Canvas ngoài màn hình, tự chia trang nếu quá dài, lưu vào `Pictures/AU Chat Studio` kèm watermark *“Nội dung hư cấu tạo bởi AU Studio”*, có nút chia sẻ. |
+| **Xuất ảnh cuộn dài** | Vẽ toàn bộ hội thoại trên Canvas ngoài màn hình, tự chia trang nếu quá dài, lưu vào `Pictures/Idol Chat Maker` kèm watermark *“Nội dung hư cấu tạo bởi Idol Chat Maker”*, có nút chia sẻ. |
 | **Riêng tư** | Không xin quyền INTERNET, tắt sao lưu đám mây; dữ liệu chỉ nằm trong Room/SQLite trên máy. APK không kèm ảnh hay tên thương mại của nghệ sĩ. |
 
 ## Kỹ thuật

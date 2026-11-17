@@ -1,5 +1,6 @@
 package com.fandom.auchatstudio
 
+import com.fandom.auchatstudio.core.Brand
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
@@ -68,7 +69,8 @@ class AppFlowTest {
 
     @Test
     fun homeShowsHeroAndStories() {
-        rule.onNodeWithText("AU Chat Studio").assertIsDisplayed()
+        rule.onNodeWithText(Brand.NAME).assertIsDisplayed()
+        rule.onNodeWithText(Brand.TAGLINE).assertIsDisplayed()
         rule.waitUntilAtLeastOneExists(hasText(title), 10_000)
         rule.onNodeWithText(title).assertIsDisplayed()
     }

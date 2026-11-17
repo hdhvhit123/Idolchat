@@ -1,5 +1,6 @@
 package com.fandom.auchatstudio.ui.studio
 
+import com.fandom.auchatstudio.core.Brand
 import android.content.ClipData
 import android.content.Intent
 import android.net.Uri
@@ -115,7 +116,7 @@ fun StudioScreen(
                     is StudioEvent.Exported -> {
                         val n = event.uris.size
                         val result = snackbar.showSnackbar(
-                            message = if (n == 1) "Đã lưu ảnh vào Pictures/AU Chat Studio" else "Đã lưu $n ảnh vào Pictures/AU Chat Studio",
+                            message = if (n == 1) "Đã lưu ảnh vào Pictures/${Brand.EXPORT_FOLDER}" else "Đã lưu $n ảnh vào Pictures/${Brand.EXPORT_FOLDER}",
                             actionLabel = "Chia sẻ",
                             duration = SnackbarDuration.Long,
                         )

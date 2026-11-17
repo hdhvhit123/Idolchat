@@ -1,5 +1,6 @@
 package com.fandom.auchatstudio.ui.home
 
+import com.fandom.auchatstudio.core.Brand
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -156,7 +157,18 @@ fun HomeContent(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             TopAppBar(
-                title = { Text("AU Chat Studio", style = MaterialTheme.typography.titleLarge) },
+                title = {
+                    Column {
+                        Text(Brand.NAME, style = MaterialTheme.typography.titleLarge)
+                        Text(
+                            Brand.TAGLINE,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                },
                 actions = {
                     FilledTonalIconButton(onClick = onOpenCharacters, modifier = Modifier.padding(end = 8.dp)) {
                         Icon(Icons.Outlined.Groups, contentDescription = "Nhân vật")

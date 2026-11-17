@@ -1,4 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">AU Chat Studio</string>
+    <!-- Keep in step with Brand.NAME in :core. -->
+    <string name="app_name">Idol Chat Maker</string>
+    <!-- Under the launcher icon the full name would be cut off, so the icon shows the short form. -->
+    <string name="launcher_name">Idol Chat</string>
 </resources>
