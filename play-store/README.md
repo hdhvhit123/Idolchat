@@ -29,3 +29,16 @@ Tên ba phong cách trong app đang trùng tên thương hiệu của người k
 Google Play có thể từ chối app theo chính sách Mạo danh / Sở hữu trí tuệ.
 
 Nên đổi tên ba phong cách trong app trước khi nộp, ví dụ "Bong bóng pastel", "Neon tối", "Hoàng hôn". Sau đó tạo lại bộ ảnh: chạy lại `source/gen.py` trên ảnh chụp mới, phần ghép khung không phải làm tay lại.
+
+## Chính sách quyền riêng tư
+`privacy-policy.html` là trang chính sách bằng tiếng Việt và tiếng Anh. Trang là một file HTML tự đủ, không gọi tài nguyên ngoài, có chế độ sáng/tối và đọc tốt trên điện thoại.
+
+Nội dung trang khớp với những gì tôi kiểm tra được trong mã nguồn ở bản ui-upgrade 23f589d:
+- Không khai báo quyền nào ngoài một quyền nội bộ do hệ thống thêm vào.
+- Không có thư viện quảng cáo hay phân tích.
+- Tắt sao lưu đám mây và tắt chuyển dữ liệu sang máy khác.
+- Chọn ảnh bằng Photo Picker; ảnh xuất lưu vào `Pictures/Idol Chat Maker`.
+
+Trước khi dùng, cần làm hai việc:
+- Thay `[EMAIL LIÊN HỆ]` và `[CONTACT EMAIL]` bằng email liên hệ.
+- Đưa trang lên một địa chỉ công khai, rồi dán URL đó vào Play Console, mục Chính sách quyền riêng tư.
