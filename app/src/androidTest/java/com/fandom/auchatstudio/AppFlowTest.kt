@@ -1,6 +1,6 @@
 package com.fandom.auchatstudio
 
-import com.fandom.auchatstudio.core.Brand
+import androidx.annotation.StringRes
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
@@ -19,8 +19,10 @@ import androidx.compose.ui.test.performTextReplacement
 import androidx.core.view.WindowCompat
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.fandom.auchatstudio.core.Brand
 import com.fandom.auchatstudio.core.MessageType
 import com.fandom.auchatstudio.core.ThemePreset
+import com.fandom.auchatstudio.i18n.storyTemplates
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -32,7 +34,8 @@ import java.util.UUID
 
 /**
  * End-to-end flows on a real device/emulator. Each test creates its own uniquely named story so
- * tests stay independent of each other and of the seeded sample data.
+ * tests stay independent of each other and of the seeded sample data. Words on screen are looked
+ * up in the app's resources, so the tests pass in whatever language the device uses.
  */
 @OptIn(ExperimentalTestApi::class)
 @RunWith(AndroidJUnit4::class)
@@ -44,6 +47,10 @@ class AppFlowTest {
         get() = InstrumentationRegistry.getInstrumentation().targetContext.applicationContext as AuChatApp
 
     private lateinit var title: String
+
+    private fun str(@StringRes id: Int, vararg args: Any): String = app.getString(id, *args)
+
+    private val narratorChip: String get() = str(R.string.cd_speaker, str(R.string.narrator))
 
     @Before
     fun setUp() {
@@ -70,7 +77,7 @@ class AppFlowTest {
     @Test
     fun homeShowsHeroAndStories() {
         rule.onNodeWithText(Brand.NAME).assertIsDisplayed()
-        rule.onNodeWithText(Brand.TAGLINE).assertIsDisplayed()
+        rule.onNodeWithText(str(R.string.app_tagline)).assertIsDisplayed()
         rule.waitUntilAtLeastOneExists(hasText(title), 10_000)
         rule.onNodeWithText(title).assertIsDisplayed()
     }
@@ -83,8 +90,8 @@ class AppFlowTest {
         rule.waitUntilAtLeastOneExists(hasText("Tin nhắn mới nè"), 5_000)
 
         // With a long cast the narrator chip is off screen and not composed yet.
-        rule.onNodeWithTag("director_switcher").performScrollToNode(hasContentDescription("Người nói: Dẫn truyện"))
-        rule.onNodeWithContentDescription("Người nói: Dẫn truyện").performClick()
+        rule.onNodeWithTag("director_switcher").performScrollToNode(hasContentDescription(narratorChip))
+        rule.onNodeWithContentDescription(narratorChip).performClick()
         rule.onNodeWithTag("composer_input").performTextInput("Ba ngày sau")
         rule.onNodeWithTag("composer_send").performClick()
         rule.waitUntilAtLeastOneExists(hasText("Ba ngày sau"), 5_000)
@@ -100,14 +107,15 @@ class AppFlowTest {
     fun narratorPresetSendsInOneTap() {
         openOwnStory()
         // With a long cast the narrator chip is off screen and not composed yet.
-        rule.onNodeWithTag("director_switcher").performScrollToNode(hasContentDescription("Người nói: Dẫn truyện"))
-        rule.onNodeWithContentDescription("Người nói: Dẫn truyện").performClick()
+        rule.onNodeWithTag("director_switcher").performScrollToNode(hasContentDescription(narratorChip))
+        rule.onNodeWithContentDescription(narratorChip).performClick()
         rule.waitUntilAtLeastOneExists(hasTestTag("narration_presets"), 5_000)
-        rule.onNodeWithText("Hôm sau").performClick()
+        val nextDay = app.resources.getStringArray(R.array.narration_presets)[1]
+        rule.onNodeWithText(nextDay).performClick()
         rule.waitUntil(5_000) {
             val messages = runBlocking { app.container.repository.stories.first() }
                 .first { it.story.title == title }
-            messages.messageCount == 4 && messages.lastText == "Hôm sau"
+            messages.messageCount == 4 && messages.lastText == nextDay
         }
     }
 
@@ -115,8 +123,8 @@ class AppFlowTest {
     fun editAndDeleteMessage() {
         openOwnStory()
         rule.onNodeWithText("Chào anh").performClick()
-        rule.waitUntilAtLeastOneExists(hasText("Sửa nội dung & giờ"), 5_000)
-        rule.onNodeWithText("Sửa nội dung & giờ").performClick()
+        rule.waitUntilAtLeastOneExists(hasText(str(R.string.edit_text_and_time)), 5_000)
+        rule.onNodeWithText(str(R.string.edit_text_and_time)).performClick()
         rule.onNodeWithTag("edit_message_text").performTextReplacement("Chào anh nha")
         rule.onNodeWithTag("edit_message_save").performClick()
         rule.waitUntilAtLeastOneExists(hasText("Chào anh nha"), 5_000)
@@ -127,8 +135,8 @@ class AppFlowTest {
         rule.waitUntilDoesNotExist(hasText("Chào anh nha"), 5_000)
 
         // The delete can be taken back from the snackbar.
-        rule.waitUntilAtLeastOneExists(hasText("Hoàn tác"), 5_000)
-        rule.onNodeWithText("Hoàn tác").performClick()
+        rule.waitUntilAtLeastOneExists(hasText(str(R.string.action_undo)), 5_000)
+        rule.onNodeWithText(str(R.string.action_undo)).performClick()
         rule.waitUntilAtLeastOneExists(hasText("Chào anh nha"), 5_000)
     }
 
@@ -139,7 +147,7 @@ class AppFlowTest {
         rule.waitUntilAtLeastOneExists(hasTestTag("speaker_narrator"), 5_000)
         rule.onNodeWithTag("speaker_narrator").performClick()
         // The sheet stays open on the same line, which is now narration.
-        rule.waitUntilAtLeastOneExists(hasText("Lời dẫn truyện"), 5_000)
+        rule.waitUntilAtLeastOneExists(hasText(str(R.string.kind_narration)), 5_000)
     }
 
     /**
@@ -195,7 +203,7 @@ class AppFlowTest {
 
     @Test
     fun createStoryFromHome() {
-        val newTitle = "Mới ${UUID.randomUUID().toString().take(4)}"
+        val newTitle = "New ${UUID.randomUUID().toString().take(4)}"
         rule.onNodeWithTag("fab_new_story").performClick()
         rule.onNodeWithTag("new_story_title").performTextInput(newTitle)
         rule.onNodeWithText("Weverse DM").performClick()
@@ -210,8 +218,9 @@ class AppFlowTest {
         rule.onNodeWithTag("home_list").performScrollToNode(hasTestTag("template_good_night"))
         rule.onNodeWithTag("template_good_night").performClick()
         waitForTheme("Lysn Bubble")
-        rule.onNodeWithTag("studio_story_title", useUnmergedTree = true).assertTextEquals("Chúc ngủ ngon")
-        rule.waitUntilAtLeastOneExists(hasText("Ngủ chưa đó?"), 5_000)
+        val template = app.storyTemplates().first { it.id == "good_night" }
+        rule.onNodeWithTag("studio_story_title", useUnmergedTree = true).assertTextEquals(template.title)
+        rule.waitUntilAtLeastOneExists(hasText(template.lines[1].text), 5_000)
         // A template story is a normal story: it can be played straight away.
         rule.onNodeWithTag("play_story").assertIsEnabled()
     }
@@ -219,23 +228,24 @@ class AppFlowTest {
     @Test
     fun duplicateStoryFromHomeMenu() {
         rule.waitUntilAtLeastOneExists(hasText(title), 10_000)
-        rule.onNodeWithContentDescription("Tùy chọn $title").performClick()
-        rule.onNodeWithText("Nhân bản").performClick()
-        rule.waitUntilAtLeastOneExists(hasText("$title (bản sao)"), 10_000)
+        rule.onNodeWithContentDescription(str(R.string.cd_options_named, title)).performClick()
+        rule.onNodeWithText(str(R.string.action_duplicate)).performClick()
+        val copyTitle = str(R.string.copy_title, title)
+        rule.waitUntilAtLeastOneExists(hasText(copyTitle), 10_000)
         val summaries = runBlocking { app.container.repository.stories.first() }
-        assertThat(summaries.first { it.story.title == "$title (bản sao)" }.messageCount).isEqualTo(3)
+        assertThat(summaries.first { it.story.title == copyTitle }.messageCount).isEqualTo(3)
         assertThat(summaries.first { it.story.title == title }.messageCount).isEqualTo(3)
     }
 
     @Test
     fun addCharacter() {
         val name = "Idol ${UUID.randomUUID().toString().take(4)}"
-        rule.onNodeWithContentDescription("Nhân vật").performClick()
+        rule.onNodeWithContentDescription(str(R.string.cd_characters)).performClick()
         rule.waitUntilAtLeastOneExists(hasTestTag("fab_add_character"), 5_000)
         rule.onNodeWithTag("fab_add_character").performClick()
         rule.onNodeWithTag("character_name_field").performTextInput(name)
         rule.onNodeWithTag("character_save").performClick()
-        rule.waitUntilAtLeastOneExists(hasContentDescription("Sửa $name"), 5_000)
+        rule.waitUntilAtLeastOneExists(hasContentDescription(str(R.string.cd_edit_named, name)), 5_000)
     }
 
     /** True when the status bar draws dark icons, i.e. the app says its background is light. */

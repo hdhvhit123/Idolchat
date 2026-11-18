@@ -18,6 +18,8 @@ class StudioRepository(
     private val db: AppDatabase,
     private val images: ImageStore,
     private val clock: () -> Long = System::currentTimeMillis,
+    /** Words written into the user's data, in the device's language (see [RepositoryStrings]). */
+    val strings: RepositoryStrings = PlainRepositoryStrings,
 ) {
     private val characterDao = db.characterDao()
     private val storyDao = db.storyDao()
@@ -67,9 +69,9 @@ class StudioRepository(
     suspend fun seedIfEmpty() {
         db.withTransaction {
             if (characterDao.getCount() > 0 || storyDao.getCount() > 0) return@withTransaction
-            val (minho, hyunjin, me) = characterDao.insertAll(SampleData.characters)
-            val storyId = storyDao.insert(SampleData.story(clock()))
-            messageDao.insertAll(SampleData.messages(storyId, minho, hyunjin, me))
+            val (minho, hyunjin, me) = characterDao.insertAll(SampleData.characters(strings))
+            val storyId = storyDao.insert(SampleData.story(strings, clock()))
+            messageDao.insertAll(SampleData.messages(strings, storyId, minho, hyunjin, me))
         }
     }
 
@@ -144,7 +146,7 @@ class StudioRepository(
         val copies = messages.map { m -> m.imagePath?.let { images.copy(it, "msg_copy") } }
         val now = clock()
         return db.withTransaction {
-            val title = (NameRules.normalizeName("${story.title} (bản sao)", NameRules.MAX_TITLE_LENGTH) ?: story.title)
+            val title = (NameRules.normalizeName(strings.copyTitle(story.title), NameRules.MAX_TITLE_LENGTH) ?: story.title)
             val newId = storyDao.insert(story.copy(id = 0, title = title, createdAt = now, updatedAt = now))
             messageDao.insertAll(
                 messages.mapIndexedNotNull { index, m ->
@@ -172,10 +174,10 @@ class StudioRepository(
             return entity.copy(id = characterDao.insert(entity)).also { cast += it }
         }
         val roles = template.lines.map { it.role }.toSet()
-        val user = cast.firstOrNull { it.isUser } ?: create("Y/N (Bạn)", isUser = true)
-        val idol = cast.firstOrNull { !it.isUser } ?: create("Idol", isUser = false)
+        val user = cast.firstOrNull { it.isUser } ?: create(strings.defaultUserName, isUser = true)
+        val idol = cast.firstOrNull { !it.isUser } ?: create(strings.defaultIdolName, isUser = false)
         val friend = if (TemplateRole.FRIEND in roles) {
-            cast.firstOrNull { !it.isUser && it.id != idol.id } ?: create("Thành viên", isUser = false)
+            cast.firstOrNull { !it.isUser && it.id != idol.id } ?: create(strings.defaultMemberName, isUser = false)
         } else {
             idol
         }

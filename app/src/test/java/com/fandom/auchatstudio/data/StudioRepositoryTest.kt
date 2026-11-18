@@ -1,11 +1,13 @@
 package com.fandom.auchatstudio.data
 
+import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.fandom.auchatstudio.FakeImageStore
 import com.fandom.auchatstudio.core.MessageType
-import com.fandom.auchatstudio.core.StoryTemplates
 import com.fandom.auchatstudio.core.ThemePreset
+import com.fandom.auchatstudio.i18n.ResourceRepositoryStrings
+import com.fandom.auchatstudio.i18n.storyTemplates
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -13,19 +15,26 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.annotation.Config
 
+/**
+ * Runs in Vietnamese with the app's real resources, so the words the repository writes into
+ * the user's data (placeholder names, copy titles, the sample) come from values-vi.
+ */
 @RunWith(AndroidJUnit4::class)
+@Config(qualifiers = "vi")
 class StudioRepositoryTest {
     private lateinit var db: AppDatabase
     private lateinit var images: FakeImageStore
     private lateinit var repo: StudioRepository
     private var now = 1_000L
+    private val context: Context get() = ApplicationProvider.getApplicationContext()
 
     @Before
     fun setUp() {
-        db = AppDatabase.inMemory(ApplicationProvider.getApplicationContext())
+        db = AppDatabase.inMemory(context)
         images = FakeImageStore()
-        repo = StudioRepository(db, images) { now++ }
+        repo = StudioRepository(db, images, clock = { now++ }, strings = ResourceRepositoryStrings(context))
     }
 
     @After
@@ -233,7 +242,7 @@ class StudioRepositoryTest {
     @Test
     fun templateUsesExistingCastAndCreatesOnlyMissingRoles() = runBlocking<Unit> {
         val idol = repo.saveCharacter(null, "Minho", 0xFFFF6584, false, null)
-        val template = StoryTemplates.byId("group_chat")!!
+        val template = context.storyTemplates().first { it.id == "group_chat" }
 
         val storyId = repo.createStoryFromTemplate(template)
 
@@ -254,11 +263,12 @@ class StudioRepositoryTest {
 
     @Test
     fun everyBuiltInTemplateCanBeCreatedTwiceWithoutAddingCharactersAgain() = runBlocking<Unit> {
-        StoryTemplates.all.forEach { repo.createStoryFromTemplate(it) }
+        val templates = context.storyTemplates()
+        templates.forEach { repo.createStoryFromTemplate(it) }
         val castAfterFirst = repo.characters.first()
-        StoryTemplates.all.forEach { repo.createStoryFromTemplate(it) }
+        templates.forEach { repo.createStoryFromTemplate(it) }
         assertThat(repo.characters.first()).isEqualTo(castAfterFirst)
-        assertThat(repo.stories.first()).hasSize(StoryTemplates.all.size * 2)
+        assertThat(repo.stories.first()).hasSize(templates.size * 2)
     }
 
     @Test

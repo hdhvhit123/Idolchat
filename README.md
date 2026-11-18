@@ -16,7 +16,8 @@
 | **Biên tập** | Chạm vào tin nhắn để sửa, đổi người nói, đổi thứ tự, xóa (có **Hoàn tác**). Chat nhóm tự hiện tên người gửi. |
 | **Bắt đầu nhanh** | Trang chủ có thẻ **Viết tiếp** cho kịch bản gần nhất, 4 **mẫu kịch bản** dựng sẵn (tự gán vào dàn nhân vật của bạn), **Nhân bản** kịch bản và hướng dẫn 3 bước cho lần đầu mở app. |
 | **Lời dẫn một chạm** | Khi chọn người dẫn truyện, các câu hay dùng ("Đã xem", "Hôm sau"…) gửi được bằng một lần chạm. |
-| **Xuất ảnh cuộn dài** | Vẽ toàn bộ hội thoại trên Canvas ngoài màn hình, tự chia trang nếu quá dài, lưu vào `Pictures/Idol Chat Maker` kèm watermark *“Nội dung hư cấu tạo bởi Idol Chat Maker”*, có nút chia sẻ. |
+| **Xuất ảnh cuộn dài** | Vẽ toàn bộ hội thoại trên Canvas ngoài màn hình, tự chia trang nếu quá dài, lưu vào `Pictures/Idol Chat Maker` kèm watermark *“Nội dung hư cấu tạo bởi Idol Chat Maker”* (theo ngôn ngữ của máy), có nút chia sẻ. |
+| **12 ngôn ngữ** | Giao diện tự hiện theo ngôn ngữ của điện thoại; trên Android 13+ có thể chọn riêng cho app trong Cài đặt → Ứng dụng → Idol Chat → Ngôn ngữ. Xem mục [Ngôn ngữ](#ngôn-ngữ). |
 | **Riêng tư** | Không xin quyền INTERNET, tắt sao lưu đám mây; dữ liệu chỉ nằm trong Room/SQLite trên máy. APK không kèm ảnh hay tên thương mại của nghệ sĩ. |
 
 ## Kỹ thuật
@@ -34,6 +35,16 @@ core/   logic thuần Kotlin + unit test
 app/    data (Room, FileStore), ui (home, characters, studio, player, chat), export
 ```
 
+## Ngôn ngữ
+
+Tiếng Anh (mặc định, `values/`), tiếng Việt (`values-vi`), tiếng Trung giản thể (`values-b+zh+Hans`) và phồn thể (`values-b+zh+Hant`), tiếng Hàn, tiếng Nhật, tiếng Hindi, tiếng Thái, tiếng Indonesia (`values-in`), tiếng Tây Ban Nha, tiếng Bồ Đào Nha và tiếng Pháp. Máy dùng ngôn ngữ khác thì app hiện tiếng Anh.
+
+- Không sửa tay `app/src/main/res/values*/strings.xml`. Mỗi ngôn ngữ là một tệp trong `tools/i18n/` (`en.py`, `vi.py`, …); sửa ở đó rồi chạy `python3 tools/i18n/gen.py` để kiểm tra (đủ khóa, đủ tham số `%1$s`, đủ dạng số nhiều, đủ số dòng trong mẫu kịch bản) và sinh lại các tệp XML cùng `res/xml/locales_config.xml`.
+- Thêm ngôn ngữ mới: chép `en.py`, dịch, thêm vào danh sách `LANGUAGES` trong `gen.py`.
+- Chữ mà app ghi vào dữ liệu (tên nhân vật tạm, tiêu đề bản sao, kịch bản mẫu, mẫu kịch bản) lấy theo ngôn ngữ **lúc tạo**; đổi ngôn ngữ sau đó không sửa kịch bản đã có.
+- Bản dịch ngoài tiếng Việt và tiếng Anh do máy soạn, nên nhờ người bản ngữ đọc lại trước khi phát hành rộng.
+- `LocaleResourcesTest` kiểm tra các bản dịch khớp nhau; job *Screenshot tour per language* trong `screenshots.yml` chụp màn hình từng ngôn ngữ lên nhánh `ci-screenshots-locales`.
+
 ## Build
 
 Yêu cầu JDK 21 (Robolectric cho SDK 36 cần Java 21; Gradle 8.14 chưa chạy được trên JDK 25) và Android SDK 36 (Android Studio bản mới). Trong Android Studio: Settings → Build Tools → Gradle → Gradle JDK = 21.
@@ -47,7 +58,7 @@ Yêu cầu JDK 21 (Robolectric cho SDK 36 cần Java 21; Gradle 8.14 chưa chạ
 ## Kiểm thử
 
 - `core/src/test`: máy trạng thái Tap-to-Chat, thời gian gõ, preset, tên/viết tắt, giờ, màu, chia trang xuất ảnh.
-- `app/src/test` (Robolectric): Repository trên Room in-memory, ViewModel Studio & Player (thời gian ảo), renderer xuất ảnh, giao diện Compose.
+- `app/src/test` (Robolectric): Repository trên Room in-memory, ViewModel Studio & Player (thời gian ảo), renderer xuất ảnh, giao diện Compose (chạy với tiếng Việt), độ khớp giữa các bản dịch.
 - `app/src/androidTest`: luồng end-to-end trên thiết bị (tạo kịch bản, soạn tin, đổi người nói, đổi theme, sửa/xóa, Tap-to-Chat, thêm nhân vật), Room trên SQLite thật, xuất ảnh qua MediaStore.
 - GitHub Actions (`.github/workflows/android.yml`) build APK, chạy unit test + lint, rồi chạy kiểm thử thiết bị trên emulator **API 31, 33, 34, 35, 36**.
 - `.github/workflows/screenshots.yml` chạy `ScreenshotTourTest` trên emulator và đẩy ảnh từng màn hình lên nhánh `ci-screenshots` để soát giao diện.

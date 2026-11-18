@@ -15,12 +15,14 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.fandom.auchatstudio.R
 import com.fandom.auchatstudio.core.ColorMath
 import com.fandom.auchatstudio.core.NameRules
 import java.io.File
@@ -59,7 +61,7 @@ fun Avatar(
             val data = if (model is String) File(model) else model
             AsyncImage(
                 model = ImageRequest.Builder(LocalContext.current).data(data).crossfade(true).build(),
-                contentDescription = "Ảnh đại diện của $name",
+                contentDescription = stringResource(R.string.cd_avatar_of, name),
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize(),
             )

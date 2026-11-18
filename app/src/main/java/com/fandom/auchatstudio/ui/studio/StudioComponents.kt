@@ -26,6 +26,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.automirrored.outlined.Notes
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.ArrowDownward
 import androidx.compose.material.icons.outlined.ArrowUpward
@@ -33,7 +34,6 @@ import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material.icons.outlined.Mic
-import androidx.compose.material.icons.automirrored.outlined.Notes
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -68,6 +68,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringArrayResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
@@ -77,8 +79,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.fandom.auchatstudio.R
 import com.fandom.auchatstudio.core.MessageType
-import com.fandom.auchatstudio.core.NarrationPresets
 import com.fandom.auchatstudio.core.VoiceFormat
 import com.fandom.auchatstudio.data.CharacterEntity
 import com.fandom.auchatstudio.data.MessageEntity
@@ -101,12 +103,12 @@ fun Composer(
     // Saved across rotation and process death, so a half-typed line is never lost.
     var text by rememberSaveable { mutableStateOf("") }
     val haptics = LocalHapticFeedback.current
+    val isNarrator = speaker == Speaker.Narrator
     val speakerName = when (speaker) {
-        Speaker.Narrator -> "người dẫn truyện"
+        Speaker.Narrator -> ""
         is Speaker.Character -> characters.firstOrNull { it.id == speaker.id }?.name ?: ""
         null -> ""
     }
-    val isNarrator = speaker == Speaker.Narrator
 
     Surface(tonalElevation = 3.dp, shadowElevation = 8.dp) {
         Column(Modifier.navigationBarsPadding().imePadding()) {
@@ -122,12 +124,13 @@ fun Composer(
             )
             if (isNarrator) {
                 // One-tap stage directions: the lines people type most as a narrator.
+                val presets = stringArrayResource(R.array.narration_presets).toList()
                 LazyRow(
                     contentPadding = PaddingValues(horizontal = 12.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.fillMaxWidth().testTag("narration_presets"),
                 ) {
-                    items(NarrationPresets.all, key = { it }) { preset ->
+                    items(presets, key = { it }) { preset ->
                         AssistChip(onClick = { onSendText(preset) }, label = { Text(preset) })
                     }
                 }
@@ -137,10 +140,10 @@ fun Composer(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 IconButton(onClick = onPickImage, enabled = !isNarrator && characters.isNotEmpty()) {
-                    Icon(Icons.Outlined.Image, contentDescription = "Gửi ảnh")
+                    Icon(Icons.Outlined.Image, contentDescription = stringResource(R.string.cd_send_photo))
                 }
                 IconButton(onClick = onVoice, enabled = !isNarrator && characters.isNotEmpty()) {
-                    Icon(Icons.Outlined.Mic, contentDescription = "Gửi tin nhắn thoại")
+                    Icon(Icons.Outlined.Mic, contentDescription = stringResource(R.string.cd_send_voice))
                 }
                 TextField(
                     value = text,
@@ -148,9 +151,9 @@ fun Composer(
                     placeholder = {
                         Text(
                             when {
-                                speakerName.isBlank() -> "Thêm nhân vật để bắt đầu"
-                                isNarrator -> "Viết lời dẫn truyện…"
-                                else -> "$speakerName nói gì?"
+                                isNarrator -> stringResource(R.string.composer_hint_narrator)
+                                speakerName.isBlank() -> stringResource(R.string.composer_hint_no_cast)
+                                else -> stringResource(R.string.composer_hint, speakerName)
                             },
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
@@ -172,7 +175,7 @@ fun Composer(
                     enabled = text.isNotBlank() && speaker != null,
                     modifier = Modifier.testTag("composer_send"),
                 ) {
-                    Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Gửi")
+                    Icon(Icons.AutoMirrored.Filled.Send, contentDescription = stringResource(R.string.action_send))
                 }
             }
         }
@@ -219,7 +222,7 @@ private fun DirectorSwitcher(
         }
         item(key = "narrator") {
             SpeakerChip(
-                label = "Dẫn truyện",
+                label = stringResource(R.string.narrator),
                 selected = speaker == Speaker.Narrator,
                 accent = accent,
                 onClick = { onSelect(Speaker.Narrator) },
@@ -233,8 +236,8 @@ private fun DirectorSwitcher(
         }
         item(key = "add") {
             SpeakerChip(
-                label = "Thêm",
-                description = "Thêm nhân vật",
+                label = stringResource(R.string.action_add),
+                description = stringResource(R.string.add_character),
                 role = Role.Button,
                 selected = false,
                 accent = accent,
@@ -256,7 +259,7 @@ private fun SpeakerChip(
     selected: Boolean,
     accent: Color,
     onClick: () -> Unit,
-    description: String = "Người nói: $label",
+    description: String = stringResource(R.string.cd_speaker, label),
     role: Role = Role.RadioButton,
     leading: @Composable () -> Unit,
 ) {
@@ -309,12 +312,15 @@ fun MessageActionsSheet(
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
         Column(Modifier.padding(bottom = 16.dp)) {
             Text(
-                text = when (item.message.type) {
-                    MessageType.NARRATION -> "Lời dẫn truyện"
-                    MessageType.VOICE -> "Tin nhắn thoại · ${VoiceFormat.format(item.message.voiceSeconds)}"
-                    MessageType.IMAGE -> "Ảnh"
-                    MessageType.TEXT -> "Tin nhắn"
-                } + (item.speaker?.let { " của ${it.name}" } ?: ""),
+                text = run {
+                    val kind = when (item.message.type) {
+                        MessageType.NARRATION -> stringResource(R.string.kind_narration)
+                        MessageType.VOICE -> stringResource(R.string.kind_voice, VoiceFormat.format(item.message.voiceSeconds))
+                        MessageType.IMAGE -> stringResource(R.string.kind_photo)
+                        MessageType.TEXT -> stringResource(R.string.kind_text)
+                    }
+                    item.speaker?.let { stringResource(R.string.kind_by, kind, it.name) } ?: kind
+                },
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
             )
@@ -323,7 +329,7 @@ fun MessageActionsSheet(
             val canNarrate = item.message.type == MessageType.TEXT || item.isNarration
             if (characters.isNotEmpty() && (canNarrate || characters.size > 1)) {
                 Text(
-                    "Đổi người nói",
+                    stringResource(R.string.change_speaker),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = 24.dp, vertical = 4.dp),
@@ -380,7 +386,7 @@ fun MessageActionsSheet(
                             ) { Icon(Icons.AutoMirrored.Outlined.Notes, null, modifier = Modifier.size(22.dp)) }
                             Spacer(Modifier.height(4.dp))
                             Text(
-                                "Dẫn truyện",
+                                stringResource(R.string.narrator),
                                 style = MaterialTheme.typography.labelSmall,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
@@ -393,7 +399,7 @@ fun MessageActionsSheet(
             val itemColors = ListItemDefaults.colors(containerColor = Color.Transparent)
             if (item.message.type != MessageType.IMAGE) {
                 ListItem(
-                    headlineContent = { Text("Sửa nội dung & giờ") },
+                    headlineContent = { Text(stringResource(R.string.edit_text_and_time)) },
                     leadingContent = { Icon(Icons.Outlined.Edit, null) },
                     colors = itemColors,
                     modifier = Modifier.clickable(onClick = onEdit),
@@ -401,7 +407,7 @@ fun MessageActionsSheet(
             }
             if (canMoveUp) {
                 ListItem(
-                    headlineContent = { Text("Đưa lên trên") },
+                    headlineContent = { Text(stringResource(R.string.move_up)) },
                     leadingContent = { Icon(Icons.Outlined.ArrowUpward, null) },
                     colors = itemColors,
                     modifier = Modifier.clickable(onClick = onMoveUp),
@@ -409,14 +415,14 @@ fun MessageActionsSheet(
             }
             if (canMoveDown) {
                 ListItem(
-                    headlineContent = { Text("Đưa xuống dưới") },
+                    headlineContent = { Text(stringResource(R.string.move_down)) },
                     leadingContent = { Icon(Icons.Outlined.ArrowDownward, null) },
                     colors = itemColors,
                     modifier = Modifier.clickable(onClick = onMoveDown),
                 )
             }
             ListItem(
-                headlineContent = { Text("Xóa tin nhắn", color = MaterialTheme.colorScheme.error) },
+                headlineContent = { Text(stringResource(R.string.delete_message), color = MaterialTheme.colorScheme.error) },
                 leadingContent = { Icon(Icons.Outlined.Delete, null, tint = MaterialTheme.colorScheme.error) },
                 colors = itemColors,
                 modifier = Modifier.clickable(onClick = onDelete).testTag("delete_message"),
@@ -437,17 +443,17 @@ fun EditMessageDialog(
     val isVoice = message.type == MessageType.VOICE
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Sửa tin nhắn") },
+        title = { Text(stringResource(R.string.edit_message)) },
         text = {
             Column {
                 if (isVoice) {
-                    Text("Độ dài: ${VoiceFormat.format(seconds.roundToInt())}")
+                    Text(stringResource(R.string.voice_length, VoiceFormat.format(seconds.roundToInt())))
                     VoiceLengthSlider(seconds) { seconds = it }
                 } else {
                     OutlinedTextField(
                         value = text,
                         onValueChange = { text = it },
-                        label = { Text("Nội dung") },
+                        label = { Text(stringResource(R.string.message_text)) },
                         minLines = 2,
                         maxLines = 6,
                         modifier = Modifier.fillMaxWidth().testTag("edit_message_text"),
@@ -458,7 +464,7 @@ fun EditMessageDialog(
                     OutlinedTextField(
                         value = time,
                         onValueChange = { if (it.length <= 5) time = it },
-                        label = { Text("Giờ hiển thị (tùy chọn)") },
+                        label = { Text(stringResource(R.string.time_label_optional)) },
                         placeholder = { Text("23:41") },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
@@ -468,10 +474,10 @@ fun EditMessageDialog(
         },
         confirmButton = {
             TextButton(onClick = { onSave(text, time, seconds.roundToInt()) }, modifier = Modifier.testTag("edit_message_save")) {
-                Text("Lưu")
+                Text(stringResource(R.string.action_save))
             }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Hủy") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } },
     )
 }
 
@@ -480,23 +486,23 @@ fun VoiceNoteDialog(onDismiss: () -> Unit, onConfirm: (Int) -> Unit) {
     var seconds by remember { mutableFloatStateOf(8f) }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Tin nhắn thoại") },
+        title = { Text(stringResource(R.string.voice_message)) },
         text = {
             Column {
                 Text(
-                    "Sóng âm được vẽ giả lập, ứng dụng không ghi âm thật.",
+                    stringResource(R.string.voice_disclaimer),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Spacer(Modifier.height(12.dp))
-                Text("Độ dài: ${VoiceFormat.format(seconds.roundToInt())}", style = MaterialTheme.typography.titleMedium)
+                Text(stringResource(R.string.voice_length, VoiceFormat.format(seconds.roundToInt())), style = MaterialTheme.typography.titleMedium)
                 VoiceLengthSlider(seconds) { seconds = it }
             }
         },
         confirmButton = {
-            TextButton(onClick = { onConfirm(seconds.roundToInt()) }, modifier = Modifier.testTag("voice_confirm")) { Text("Gửi") }
+            TextButton(onClick = { onConfirm(seconds.roundToInt()) }, modifier = Modifier.testTag("voice_confirm")) { Text(stringResource(R.string.action_send)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Hủy") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } },
     )
 }
 
@@ -509,13 +515,14 @@ private const val VOICE_MAX_SECONDS = 120f
  */
 @Composable
 private fun VoiceLengthSlider(seconds: Float, onChange: (Float) -> Unit) {
+    val sliderLabel = stringResource(R.string.cd_voice_length)
     Column {
         Slider(
             value = seconds,
             onValueChange = onChange,
             valueRange = VOICE_MIN_SECONDS..VOICE_MAX_SECONDS,
             modifier = Modifier.semantics {
-                contentDescription = "Độ dài tin nhắn thoại"
+                contentDescription = sliderLabel
                 stateDescription = VoiceFormat.format(seconds.roundToInt())
             },
         )

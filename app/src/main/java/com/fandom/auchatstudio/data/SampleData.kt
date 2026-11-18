@@ -8,20 +8,20 @@ import com.fandom.auchatstudio.core.ThemePreset
  * photos or trademarked names beyond generic first names; users load their own avatars.
  */
 internal object SampleData {
-    val characters = listOf(
+    fun characters(strings: RepositoryStrings) = listOf(
         CharacterEntity(name = "Minho (Bias)", roleColorHex = 0xFFFF6584, isUser = false),
         CharacterEntity(name = "Hyunjin", roleColorHex = 0xFF6C63FF, isUser = false),
-        CharacterEntity(name = "Y/N (Bạn)", roleColorHex = 0xFF43D8C9, isUser = true),
+        CharacterEntity(name = strings.defaultUserName, roleColorHex = 0xFF43D8C9, isUser = true),
     )
 
-    fun story(now: Long) = StoryEntity(
-        title = "Tin nhắn lúc nửa đêm",
+    fun story(strings: RepositoryStrings, now: Long) = StoryEntity(
+        title = strings.sampleTitle,
         theme = ThemePreset.LYSN_BUBBLE,
         chatTitle = "Minho",
         createdAt = now,
     )
 
-    fun messages(storyId: Long, minho: Long, hyunjin: Long, me: Long): List<MessageEntity> {
+    fun messages(strings: RepositoryStrings, storyId: Long, minho: Long, hyunjin: Long, me: Long): List<MessageEntity> {
         var position = 0
         fun msg(
             characterId: Long?,
@@ -38,16 +38,19 @@ internal object SampleData {
             timeLabel = time,
             position = position++,
         )
+        // Eight written lines; a translation with any other count falls back to English.
+        val lines = strings.sampleLines.takeIf { it.size == PlainRepositoryStrings.sampleLines.size }
+            ?: PlainRepositoryStrings.sampleLines
         return listOf(
-            msg(null, "02:13 · Minho đã gửi cho bạn một tin nhắn", MessageType.NARRATION),
-            msg(minho, "Còn thức không đó?", time = "02:13"),
-            msg(me, "Sao anh biết em chưa ngủ 👀", time = "02:14"),
-            msg(minho, "Đoán thôi. Mà đoán đúng ha"),
+            msg(null, lines[0], MessageType.NARRATION),
+            msg(minho, lines[1], time = "02:13"),
+            msg(me, lines[2], time = "02:14"),
+            msg(minho, lines[3]),
             msg(minho, type = MessageType.VOICE, voiceSeconds = 12, time = "02:15"),
-            msg(me, "Anh hát đó hả?? Bài mới sao 😳"),
-            msg(minho, "Bí mật. Đừng nói ai nhé", time = "02:16"),
-            msg(hyunjin, "Hai người nhắn gì lén lút vậy 😏"),
-            msg(null, "Hyunjin đã xem", MessageType.NARRATION),
+            msg(me, lines[4]),
+            msg(minho, lines[5], time = "02:16"),
+            msg(hyunjin, lines[6]),
+            msg(null, lines[7], MessageType.NARRATION),
         )
     }
 }

@@ -48,7 +48,10 @@ object ChatLayout {
         return messages.mapNotNull { it.characterId }.filter { it !in users }.distinct().size > 1
     }
 
-    /** Header title: explicit chat title, else the other participants' names. */
+    /**
+     * Header title: explicit chat title, else the other participants' names. Empty when there is
+     * nobody to name; the screen and the exporter then show a translated "Chat".
+     */
     fun headerTitle(chatTitle: String?, messages: List<MessageEntity>, characters: List<CharacterEntity>): String {
         if (!chatTitle.isNullOrBlank()) return chatTitle
         val byId = characters.associateBy { it.id }
@@ -57,7 +60,7 @@ object ChatLayout {
             .filterNot { it.isUser }
             .map { it.name }
         return when {
-            names.isEmpty() -> "Cuộc trò chuyện"
+            names.isEmpty() -> ""
             names.size <= 3 -> names.joinToString(", ")
             else -> names.take(2).joinToString(", ") + " +${names.size - 2}"
         }

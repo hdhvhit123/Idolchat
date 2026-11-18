@@ -49,9 +49,4 @@ class ColorsAndListsTest {
     fun `export paging of nothing is empty`() {
         assertThat(ExportPaging.split(emptyList(), 100)).isEmpty()
     }
-
-    @Test
-    fun `watermark text matches the design document`() {
-        assertThat(Watermark.TEXT).isEqualTo("Nội dung hư cấu tạo bởi Idol Chat Maker")
-    }
 }

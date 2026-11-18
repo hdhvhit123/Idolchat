@@ -1,5 +1,6 @@
 package com.fandom.auchatstudio.ui.characters
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,7 +15,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.background
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.PersonAdd
@@ -42,12 +42,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.fandom.auchatstudio.R
 import com.fandom.auchatstudio.data.CharacterEntity
+import com.fandom.auchatstudio.i18n.resolve
 import com.fandom.auchatstudio.ui.appContainer
 import com.fandom.auchatstudio.ui.components.Avatar
 import com.fandom.auchatstudio.ui.components.ConfirmDialog
@@ -67,10 +71,11 @@ fun CharactersScreen(onBack: () -> Unit) {
     var editing by remember { mutableStateOf<CharacterEntity?>(null) }
     var deleting by remember { mutableStateOf<CharacterEntity?>(null) }
     val snackbar = remember { SnackbarHostState() }
+    val context = LocalContext.current
 
     LaunchedEffect(error) {
         error?.let {
-            snackbar.showSnackbar(it)
+            snackbar.showSnackbar(it.resolve(context))
             vm.clearError()
         }
     }
@@ -78,9 +83,9 @@ fun CharactersScreen(onBack: () -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Dàn nhân vật", style = MaterialTheme.typography.titleLarge) },
+                title = { Text(stringResource(R.string.cast_title), style = MaterialTheme.typography.titleLarge) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Quay lại") }
+                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.cd_back)) }
                 },
             )
         },
@@ -88,7 +93,7 @@ fun CharactersScreen(onBack: () -> Unit) {
             ExtendedFloatingActionButton(
                 onClick = { editing = NewCharacter },
                 icon = { Icon(Icons.Filled.PersonAdd, null) },
-                text = { Text("Thêm nhân vật") },
+                text = { Text(stringResource(R.string.add_character)) },
                 modifier = Modifier.testTag("fab_add_character"),
             )
         },
@@ -111,16 +116,16 @@ fun CharactersScreen(onBack: () -> Unit) {
                 if (list.isEmpty()) {
                     item(key = "empty") {
                         EmptyState(
-                            title = "Chưa có nhân vật nào",
-                            message = "Thêm idol của bạn và một nhân vật \"tôi\" để bắt đầu nhắn tin.",
-                            actionLabel = "Thêm nhân vật",
+                            title = stringResource(R.string.cast_empty_title),
+                            message = stringResource(R.string.cast_empty_message),
+                            actionLabel = stringResource(R.string.add_character),
                             onAction = { editing = NewCharacter },
                         )
                     }
                 } else {
                     item(key = "hint") {
                         Text(
-                            "Chạm vào một nhân vật để đổi tên, màu hoặc ảnh. Ảnh lấy từ máy của bạn và chỉ lưu trong máy.",
+                            stringResource(R.string.cast_hint),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp),
@@ -154,9 +159,9 @@ fun CharactersScreen(onBack: () -> Unit) {
     }
     deleting?.let { c ->
         ConfirmDialog(
-            title = "Xóa ${c.name}?",
-            message = "Mọi tin nhắn của nhân vật này trong các kịch bản cũng sẽ bị xóa.",
-            confirmText = "Xóa",
+            title = stringResource(R.string.delete_character_title, c.name),
+            message = stringResource(R.string.delete_character_message),
+            confirmText = stringResource(R.string.action_delete),
             onDismiss = { deleting = null },
             onConfirm = {
                 vm.delete(c)
@@ -189,7 +194,7 @@ private fun CharacterRow(character: CharacterEntity, onClick: () -> Unit, modifi
                     if (character.isUser) {
                         Spacer(Modifier.width(8.dp))
                         Text(
-                            "Tôi",
+                            stringResource(R.string.badge_me),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onPrimaryContainer,
                             modifier = Modifier
@@ -203,13 +208,13 @@ private fun CharacterRow(character: CharacterEntity, onClick: () -> Unit, modifi
                     Box(Modifier.size(10.dp).clip(CircleShape).background(Color(character.roleColorHex)))
                     Spacer(Modifier.width(6.dp))
                     Text(
-                        if (character.isUser) "Tin nhắn nằm bên phải" else "Tin nhắn nằm bên trái",
+                        stringResource(if (character.isUser) R.string.character_side_right else R.string.character_side_left),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
-            Icon(Icons.Outlined.Edit, contentDescription = "Sửa ${character.name}", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            Icon(Icons.Outlined.Edit, contentDescription = stringResource(R.string.cd_edit_named, character.name), tint = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }

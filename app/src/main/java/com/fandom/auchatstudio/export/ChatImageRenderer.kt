@@ -15,12 +15,13 @@ import android.graphics.Typeface
 import android.text.Layout
 import android.text.StaticLayout
 import android.text.TextPaint
+import com.fandom.auchatstudio.R
+import com.fandom.auchatstudio.core.Brand
 import com.fandom.auchatstudio.core.ColorMath
 import com.fandom.auchatstudio.core.ExportPaging
 import com.fandom.auchatstudio.core.MessageType
 import com.fandom.auchatstudio.core.NameRules
 import com.fandom.auchatstudio.core.VoiceFormat
-import com.fandom.auchatstudio.core.Watermark
 import com.fandom.auchatstudio.data.CharacterEntity
 import com.fandom.auchatstudio.ui.chat.ChatItem
 import com.fandom.auchatstudio.ui.chat.ChatStyle
@@ -57,6 +58,8 @@ class ChatImageRenderer(
     private val avatarGap = dp(8f)
     private val maxBubbleWidth = dp(WIDTH_DP - 12f * 2 - 30f - 8f - 48f)
     private val avatarCache = HashMap<Long, Bitmap?>()
+    private val unknownSpeaker = context.getString(R.string.unknown_speaker)
+    private val watermark = context.getString(R.string.watermark, Brand.NAME)
 
     private interface Block {
         val height: Float
@@ -65,7 +68,7 @@ class ChatImageRenderer(
 
     fun render(headerTitle: String, partners: List<CharacterEntity>, items: List<ChatItem>): List<Bitmap> {
         val blocks = items.map(::measure)
-        val header = HeaderBlock(headerTitle, partners)
+        val header = HeaderBlock(headerTitle.ifEmpty { context.getString(R.string.chat_title_fallback) }, partners)
         val footer = FooterBlock()
         val budget = (MAX_PAGE_HEIGHT_PX - header.height - footer.height - dp(24f)).toInt()
         val pages = ExportPaging.split(blocks.map { ceil(it.height).toInt() }, budget)
@@ -218,7 +221,7 @@ class ChatImageRenderer(
             var y = top + topGap
             val incomingLeft = sidePad + avatarSize + avatarGap
             if (nameHeight > 0f) {
-                canvas.drawText(item.speaker?.name ?: "Không rõ", incomingLeft + dp(4f), y + dp(12f), namePaint)
+                canvas.drawText(item.speaker?.name ?: unknownSpeaker, incomingLeft + dp(4f), y + dp(12f), namePaint)
                 y += nameHeight
             }
             val left = if (item.outgoing) WIDTH_PX - sidePad - content.width else incomingLeft
@@ -290,7 +293,7 @@ class ChatImageRenderer(
                 textSize = dp(11f)
                 textAlign = Paint.Align.CENTER
             }
-            canvas.drawText("⚠ ${Watermark.TEXT}", WIDTH_PX / 2, top + dp(22f), p)
+            canvas.drawText("⚠ $watermark", WIDTH_PX / 2, top + dp(22f), p)
         }
     }
 

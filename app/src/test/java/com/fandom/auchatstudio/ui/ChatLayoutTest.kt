@@ -46,7 +46,8 @@ class ChatLayoutTest {
     fun headerTitlePrefersExplicitTitleThenPartners() {
         assertThat(ChatLayout.headerTitle("Bubble", emptyList(), cast)).isEqualTo("Bubble")
         assertThat(ChatLayout.headerTitle(null, listOf(m(1), m(3), m(2)), cast)).isEqualTo("Minho, Hyunjin")
-        assertThat(ChatLayout.headerTitle("  ", emptyList(), cast)).isEqualTo("Cuộc trò chuyện")
+        // No title and nobody to name: the screen and the exporter show their own translated fallback.
+        assertThat(ChatLayout.headerTitle("  ", emptyList(), cast)).isEmpty()
     }
 
     @Test

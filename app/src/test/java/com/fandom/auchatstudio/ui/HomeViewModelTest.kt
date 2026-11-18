@@ -1,14 +1,16 @@
 package com.fandom.auchatstudio.ui
 
+import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.fandom.auchatstudio.FakeAppPrefs
 import com.fandom.auchatstudio.FakeImageStore
 import com.fandom.auchatstudio.core.MessageType
-import com.fandom.auchatstudio.core.StoryTemplates
 import com.fandom.auchatstudio.core.ThemePreset
 import com.fandom.auchatstudio.data.AppDatabase
 import com.fandom.auchatstudio.data.StudioRepository
+import com.fandom.auchatstudio.i18n.ResourceRepositoryStrings
+import com.fandom.auchatstudio.i18n.storyTemplates
 import com.fandom.auchatstudio.ui.home.HomeViewModel
 import com.fandom.auchatstudio.waitFor
 import com.google.common.truth.Truth.assertThat
@@ -27,20 +29,23 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.annotation.Config
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(AndroidJUnit4::class)
+@Config(qualifiers = "vi")
 class HomeViewModelTest {
     private val dispatcher = StandardTestDispatcher()
     private lateinit var db: AppDatabase
     private lateinit var repo: StudioRepository
     private val prefs = FakeAppPrefs()
+    private val context: Context get() = ApplicationProvider.getApplicationContext()
 
     @Before
     fun setUp() {
         Dispatchers.setMain(dispatcher)
-        db = AppDatabase.inMemory(ApplicationProvider.getApplicationContext())
-        repo = StudioRepository(db, FakeImageStore())
+        db = AppDatabase.inMemory(context)
+        repo = StudioRepository(db, FakeImageStore(), strings = ResourceRepositoryStrings(context))
     }
 
     @After
@@ -52,7 +57,7 @@ class HomeViewModelTest {
     private fun TestScope.subscribed(messages: MutableList<String>? = null): HomeViewModel {
         val vm = HomeViewModel(repo, prefs)
         backgroundScope.launch { vm.state.collect {} }
-        if (messages != null) backgroundScope.launch { vm.messageFlow.collect { messages += it } }
+        if (messages != null) backgroundScope.launch { vm.messageFlow.collect { messages += it.resolve(context) } }
         return vm
     }
 
@@ -86,11 +91,12 @@ class HomeViewModelTest {
         val vm = subscribed()
         var opened = -1L
 
-        vm.createFromTemplate(StoryTemplates.all.first()) { opened = it }
+        val template = context.storyTemplates().first()
+        vm.createFromTemplate(template) { opened = it }
         waitFor(step = { runCurrent() }) { opened > 0 }
 
-        val template = StoryTemplates.all.first()
         assertThat(repo.story(opened).first()?.title).isEqualTo(template.title)
+        assertThat(template.title).isEqualTo("Chúc ngủ ngon")
         assertThat(repo.messages(opened).first()).hasSize(template.lines.size)
     }
 
@@ -104,7 +110,7 @@ class HomeViewModelTest {
         waitFor(step = { runCurrent() }) { opened > 0 }
 
         val story = repo.story(opened).first()!!
-        assertThat(story.title).isEqualTo(HomeViewModel.DEFAULT_TITLE)
+        assertThat(story.title).isEqualTo("Kịch bản chưa đặt tên")
         assertThat(story.theme).isEqualTo(ThemePreset.INSTAGRAM_DM)
     }
 

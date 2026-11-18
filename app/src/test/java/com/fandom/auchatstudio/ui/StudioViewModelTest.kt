@@ -4,6 +4,7 @@ import android.net.Uri
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.fandom.auchatstudio.FakeImageStore
+import com.fandom.auchatstudio.R
 import com.fandom.auchatstudio.core.MessageType
 import com.fandom.auchatstudio.core.ThemePreset
 import com.fandom.auchatstudio.data.AppDatabase
@@ -140,7 +141,7 @@ class StudioViewModelTest {
         images.nextImport = null
         vm.sendImage(Uri.parse("content://picker/2"))
         waitFor(step = { runCurrent() }) { events.isNotEmpty() }
-        assertThat((events.last() as StudioEvent.Toast).message).contains("Không đọc được ảnh")
+        assertThat((events.last() as StudioEvent.Toast).message.id).isEqualTo(R.string.toast_image_unreadable)
         assertThat(vm.state.value.items).hasSize(2)
     }
 
@@ -201,7 +202,7 @@ class StudioViewModelTest {
 
         vm.updateMessage(msg, "  ", "", 0)
         runCurrent()
-        assertThat(events.filterIsInstance<StudioEvent.Toast>().last().message).contains("không được để trống")
+        assertThat(events.filterIsInstance<StudioEvent.Toast>().last().message.id).isEqualTo(R.string.toast_text_empty)
 
         vm.updateMessage(vm.state.value.items.single().message, "ba", "99:99", 0)
         waitFor(step = { runCurrent() }) { vm.state.value.items.single().message.text == "ba" }
@@ -273,7 +274,7 @@ class StudioViewModelTest {
         val vm = subscribed(exporter, events)
         vm.export()
         runCurrent()
-        assertThat(events.filterIsInstance<StudioEvent.Toast>().single().message).contains("chưa có tin nhắn")
+        assertThat(events.filterIsInstance<StudioEvent.Toast>().single().message.id).isEqualTo(R.string.toast_nothing_to_export)
 
         vm.sendText("xin chào")
         awaitItems(vm, 1)

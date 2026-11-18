@@ -5,10 +5,8 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.selection.selectable
-import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,6 +20,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -48,7 +48,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -56,6 +58,7 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.fandom.auchatstudio.R
 import com.fandom.auchatstudio.core.ColorMath
 import com.fandom.auchatstudio.core.NameRules
 import com.fandom.auchatstudio.core.RolePalette
@@ -81,6 +84,8 @@ fun EditCharacterDialog(
     var isUser by remember { mutableStateOf(character?.isUser ?: false) }
     var avatar by remember { mutableStateOf<AvatarChange>(AvatarChange.Keep) }
     var nameError by remember { mutableStateOf(false) }
+    val pickAvatar = stringResource(R.string.cd_pick_avatar)
+    val context = LocalContext.current
 
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         if (uri != null) avatar = AvatarChange.Picked(uri)
@@ -102,7 +107,7 @@ fun EditCharacterDialog(
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text(
-                    if (character == null) "Thêm nhân vật" else "Sửa nhân vật",
+                    stringResource(if (character == null) R.string.add_character else R.string.edit_character),
                     style = MaterialTheme.typography.titleLarge,
                 )
                 Spacer(Modifier.height(20.dp))
@@ -117,7 +122,7 @@ fun EditCharacterDialog(
                         ) {
                             picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
                         }
-                        .semantics { contentDescription = "Chọn ảnh đại diện" },
+                        .semantics { contentDescription = pickAvatar },
                 ) {
                     Avatar(
                         name = name.ifBlank { "?" },
@@ -141,7 +146,7 @@ fun EditCharacterDialog(
                     }
                 }
                 if (previewModel != null) {
-                    TextButton(onClick = { avatar = AvatarChange.Remove }) { Text("Gỡ ảnh") }
+                    TextButton(onClick = { avatar = AvatarChange.Remove }) { Text(stringResource(R.string.remove_photo)) }
                 } else {
                     Spacer(Modifier.height(12.dp))
                 }
@@ -151,15 +156,15 @@ fun EditCharacterDialog(
                         if (it.length <= NameRules.MAX_NAME_LENGTH) name = it
                         nameError = false
                     },
-                    label = { Text("Tên hiển thị") },
+                    label = { Text(stringResource(R.string.display_name)) },
                     singleLine = true,
                     isError = nameError,
-                    supportingText = { if (nameError) Text("Hãy nhập tên nhân vật") },
+                    supportingText = { if (nameError) Text(stringResource(R.string.name_required)) },
                     keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words),
                     modifier = Modifier.fillMaxWidth().testTag("character_name_field"),
                 )
                 Spacer(Modifier.height(8.dp))
-                Text("Màu vai diễn", style = MaterialTheme.typography.labelLarge, modifier = Modifier.fillMaxWidth())
+                Text(stringResource(R.string.role_color), style = MaterialTheme.typography.labelLarge, modifier = Modifier.fillMaxWidth())
                 Spacer(Modifier.height(8.dp))
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -179,7 +184,7 @@ fun EditCharacterDialog(
                                     shape = CircleShape,
                                 )
                                 .selectable(selected = selected, role = Role.RadioButton) { color = c }
-                                .semantics { contentDescription = "Màu ${RolePalette.colors.indexOf(c) + 1}" },
+                                .semantics { contentDescription = context.getString(R.string.cd_color_n, RolePalette.colors.indexOf(c) + 1) },
                             contentAlignment = Alignment.Center,
                         ) {
                             if (selected) {
@@ -204,9 +209,9 @@ fun EditCharacterDialog(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Column(Modifier.weight(1f)) {
-                        Text("Đây là nhân vật của tôi", style = MaterialTheme.typography.titleSmall)
+                        Text(stringResource(R.string.this_is_me), style = MaterialTheme.typography.titleSmall)
                         Text(
-                            "Tin nhắn của nhân vật này nằm bên phải",
+                            stringResource(R.string.this_is_me_hint),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -222,11 +227,11 @@ fun EditCharacterDialog(
                         ) {
                             Icon(Icons.Outlined.Delete, null, modifier = Modifier.size(18.dp))
                             Spacer(Modifier.width(4.dp))
-                            Text("Xóa")
+                            Text(stringResource(R.string.action_delete))
                         }
                     }
                     Spacer(Modifier.weight(1f))
-                    TextButton(onClick = onDismiss) { Text("Hủy") }
+                    TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
                     Spacer(Modifier.width(8.dp))
                     Button(
                         enabled = !saving,
@@ -238,7 +243,7 @@ fun EditCharacterDialog(
                             }
                         },
                         modifier = Modifier.testTag("character_save"),
-                    ) { Text(if (saving) "Đang lưu…" else "Lưu") }
+                    ) { Text(stringResource(if (saving) R.string.saving else R.string.action_save)) }
                 }
             }
         }
