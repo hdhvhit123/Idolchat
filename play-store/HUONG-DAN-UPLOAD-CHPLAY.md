@@ -1,73 +1,76 @@
-# Hướng dẫn đưa Idol Chat Maker lên CH Play
+# Hướng dẫn đưa Idol Chat Maker lên CH Play (tài khoản Play Console tạo năm 2017)
 
-Cập nhật: 17/11/2026, dựa trên `main` @ 2093d84.
+Cập nhật: 18/11/2026, dựa trên `main` @ c92833e (đã có giao diện mới và 12 ngôn ngữ).
 
-Tên các mục trong Play Console được ghi theo dạng *Tiếng Việt / English*, vì giao diện Console có thể hiển thị một trong hai ngôn ngữ.
+Tên mục trong Play Console ghi dạng *Tiếng Việt / English*.
 
-## Tình trạng hiện tại của dự án
+## Tài khoản từ năm 2017 khác gì tài khoản mới
+
+| | Tài khoản mới (cá nhân, sau 13/11/2023) | **Tài khoản của bạn (2017)** |
+|---|---|---|
+| Phí đăng ký 25 USD | Phải trả | **Không** — đã trả từ trước |
+| Thử nghiệm kín 12 người × 14 ngày trước khi phát hành | Bắt buộc | **Không bắt buộc** — được phát hành thẳng lên kênh chính thức |
+| Xác minh danh tính, email, số điện thoại | Làm khi đăng ký | Làm nếu Console còn hiện yêu cầu (xem Bước 1) |
+
+Nhờ vậy, từ lúc có file AAB đến khi app lên CH Play chỉ còn chờ Google duyệt, thường là vài ngày.
+
+## Tình trạng dự án
 
 | Mục | Trạng thái |
 |---|---|
-| Mã ứng dụng (`applicationId`) | `io.github.hdhvhit123.idolchat` — **không bao giờ đổi được sau khi đăng** |
+| Mã ứng dụng | `io.github.hdhvhit123.idolchat` — **không đổi được sau khi đăng** |
 | `versionCode` / `versionName` | 1 / 1.0.0 |
-| `targetSdk` | 36 (Android 16) — đạt yêu cầu của Play từ 31/08/2026 |
-| Ký bản release | ⚠ **Đang dùng khóa debug** → Play sẽ từ chối. Phải làm Bước 2–3 |
+| `targetSdk` | 36 — đạt yêu cầu Play từ 31/08/2026 |
+| Ngôn ngữ app | 12: en (mặc định), vi, zh-Hans, zh-Hant, ko, ja, hi, th, in, es, pt, fr — tự theo ngôn ngữ máy |
+| Ký bản release | ⚠ **Vẫn dùng khóa debug** → Play từ chối. Phải làm Bước 2–3 |
 | Chính sách quyền riêng tư | ✅ https://hdhvhit123.github.io/Idolchat/privacy/ |
-| Icon, ảnh nổi bật, ảnh màn hình | ✅ `play-store/` (tiếng Việt), `play-store/en/` (tiếng Anh) |
-| Nội dung trang cửa hàng | ✅ `play-store/store-listing-vi.md`, `play-store/en/store-listing-en.md` |
-
-Thời gian dự kiến:
-- Làm hồ sơ và xác minh tài khoản: 1 đến vài ngày.
-- Thử nghiệm kín bắt buộc: **ít nhất 14 ngày**.
-- Google duyệt mỗi lần gửi: thường vài giờ đến vài ngày.
+| Icon, ảnh nổi bật, ảnh màn hình | ✅ `play-store/` (vi), `play-store/en/` (en) |
+| Nội dung trang cửa hàng | ✅ `store-listing-vi.md`, `en/store-listing-en.md` |
 
 ---
 
-## Bước 1 — Tạo tài khoản nhà phát triển
+## Bước 1 — Kiểm tra tài khoản
 
-1. Vào https://play.google.com/console/signup bằng tài khoản Google bạn muốn dùng lâu dài.
-2. Chọn loại tài khoản:
-   - **Cá nhân (Personal):** đơn giản nhất. Nhưng tài khoản cá nhân tạo sau 13/11/2023 **bắt buộc phải thử nghiệm kín với ít nhất 12 người trong 14 ngày liên tục** rồi mới được phát hành công khai (xem Bước 8).
-   - **Tổ chức (Organization):** cần mã D-U-N-S của công ty, không phải qua 14 ngày thử nghiệm kín.
-3. Trả phí đăng ký **25 USD một lần** bằng thẻ Visa hoặc Mastercard.
-4. Xác minh danh tính:
-   - Chụp CCCD hoặc hộ chiếu.
-   - Xác minh số điện thoại và email liên hệ.
-   - Tên trên giấy tờ phải khớp với tên trong hồ sơ thanh toán.
-5. Điền thông tin nhà phát triển:
-   - Tên nhà phát triển: là tên hiển thị trên CH Play.
-   - Email liên hệ: email này **công khai** với người dùng.
+1. Vào https://play.google.com/console bằng tài khoản Google đã tạo năm 2017.
+2. Mở **Trang chủ** và **Hộp thư** (biểu tượng chuông). Nếu có yêu cầu **xác minh danh tính / Verify your identity** hoặc **xác minh thông tin liên hệ**, làm theo cho xong. Google yêu cầu cả tài khoản cũ xác minh; chưa xong thì không phát hành được.
+3. Mở *Cài đặt → Chi tiết về nhà phát triển* (*Settings → Developer account → About you*) và kiểm tra:
+   - **Tên nhà phát triển**: hiển thị trên CH Play.
+   - **Email liên hệ**: công khai cho người dùng và phải nhận được thư.
+   - **Website**: không bắt buộc, có thể dùng `https://hdhvhit123.github.io/Idolchat/`.
+4. **Khai báo tư cách người bán** (theo luật EU):
+   - App miễn phí, không quảng cáo → chọn **Pháp nhân phi thương mại**.
+   - Nếu gắn AdMob hoặc thu tiền → chọn **Người bán**; thông tin liên hệ sẽ hiển thị công khai ở EU.
 
 ## Bước 2 — Tạo khóa tải lên (upload key)
 
-Khóa này dùng để ký file gửi lên Google. **Mất khóa thì không cập nhật app được** cho đến khi xin Google cấp lại, việc này mất vài ngày.
-
-Trên máy Windows, mở PowerShell và chạy (JDK 21 đã có sẵn ở `C:\Users\BMTU\.jdks\jbr-21.0.11`):
+Mất khóa thì không cập nhật app được cho đến khi xin Google cấp lại, mất vài ngày.
 
 ```powershell
-& "C:\Users\BMTU\.jdks\jbr-21.0.11\bin\keytool.exe" -genkeypair -v `
+New-Item -ItemType Directory -Force "$env:USERPROFILE\keys" | Out-Null
+& "<thư mục JDK 21>\bin\keytool.exe" -genkeypair -v `
   -keystore "$env:USERPROFILE\keys\idolchat-upload.jks" `
   -alias upload -keyalg RSA -keysize 2048 -validity 10000
 ```
 
-- Lệnh sẽ hỏi mật khẩu và họ tên. Ghi mật khẩu vào trình quản lý mật khẩu.
-- Sao lưu file `idolchat-upload.jks` ra 2 nơi, ví dụ USB và Google Drive cá nhân.
-- **Không** đưa file này hay mật khẩu lên GitHub. `.gitignore` đã chặn `*.keystore` nhưng **chưa chặn `*.jks`**, nên hãy để file ngoài thư mục dự án như lệnh trên.
+- Thư mục JDK 21: trên máy BMTU là `C:\Users\BMTU\.jdks\jbr-21.0.11`. Trong Android Studio xem ở *Settings → Build Tools → Gradle → Gradle JDK*.
+- Ghi mật khẩu vào trình quản lý mật khẩu.
+- Sao lưu file `.jks` ra 2 nơi.
+- **Không** để file này trong thư mục dự án. `.gitignore` hiện chỉ chặn `*.keystore`, không chặn `*.jks`.
 
 ## Bước 3 — Cho bản release ký bằng khóa thật (cần sửa mã)
 
-Hiện tại `app/build.gradle.kts` đang ghi `signingConfig = signingConfigs.getByName("debug")`. Cần sửa để Gradle đọc khóa từ một file nằm ngoài git. Việc sửa mã này do phiên trên cloud làm.
+`app/build.gradle.kts` đang ghi `signingConfig = signingConfigs.getByName("debug")`.
 
-**3a. Tạo file `keystore.properties`** ở thư mục gốc dự án và thêm dòng `keystore.properties` vào `.gitignore`:
+**3a.** Tạo file `keystore.properties` ở thư mục gốc dự án, thêm dòng `keystore.properties` và `*.jks` vào `.gitignore`:
 
 ```properties
-storeFile=C:/Users/BMTU/keys/idolchat-upload.jks
+storeFile=C:/Users/<tên user>/keys/idolchat-upload.jks
 storePassword=MẬT_KHẨU
 keyAlias=upload
 keyPassword=MẬT_KHẨU
 ```
 
-**3b. Sửa `app/build.gradle.kts`:**
+**3b.** Sửa `app/build.gradle.kts`:
 
 ```kotlin
 val keystoreProps = java.util.Properties().apply {
@@ -98,144 +101,103 @@ android {
 
 ## Bước 4 — Build file AAB
 
-CH Play chỉ nhận file **.aab** (Android App Bundle), không nhận APK, cho app mới.
-
 ```powershell
-cd C:\Users\BMTU\AndroidStudioProjects\Idolchat
-$env:JAVA_HOME = "C:\Users\BMTU\.jdks\jbr-21.0.11"
+git pull origin main
 .\gradlew.bat :app:bundleRelease
 ```
 
-- File kết quả nằm ở `app\build\outputs\bundle\release\app-release.aab`.
-- Trong Android Studio có thể làm tương đương: *Build → Generate Signed App Bundle / APK → Android App Bundle*.
-- **Mỗi lần gửi bản mới phải tăng `versionCode`** trong `app/build.gradle.kts` (1 → 2 → 3…) và đổi `versionName` (1.0.0 → 1.0.1…).
+- Kết quả nằm ở `app\build\outputs\bundle\release\app-release.aab`.
+- Trong Android Studio: *Build → Generate Signed App Bundle / APK → Android App Bundle*.
+- **Mỗi lần gửi bản mới phải tăng `versionCode`** (1 → 2 → 3…) và đổi `versionName` (1.0.0 → 1.0.1…).
 
-## Bước 5 — Tạo ứng dụng trong Play Console
+## Bước 5 — Tạo ứng dụng
 
-*Tạo ứng dụng / Create app*:
+*Tất cả ứng dụng → Tạo ứng dụng / All apps → Create app*:
 
 | Ô | Điền |
 |---|---|
-| Tên ứng dụng | `Idol Chat Maker: Tạo chat idol` |
-| Ngôn ngữ mặc định | Tiếng Việt – vi-VN |
-| Ứng dụng hay trò chơi | Ứng dụng |
-| Miễn phí hay có phí | Miễn phí (**sau này không đổi sang có phí được**) |
-| Cam kết | Tích cả hai ô: Chính sách chương trình dành cho nhà phát triển và Luật xuất khẩu Hoa Kỳ |
+| Tên ứng dụng | `Idol Chat Maker: Chat Stories` (nếu ngôn ngữ mặc định là tiếng Anh) hoặc `Idol Chat Maker: Tạo chat idol` (nếu là tiếng Việt) |
+| Ngôn ngữ mặc định | **English (United States) – en-US** là khuyên dùng, vì app mặc định tiếng Anh và phát hành nhiều nước. Thêm tiếng Việt làm bản dịch ở Bước 7 |
+| Ứng dụng / Trò chơi | Ứng dụng |
+| Miễn phí / Có phí | Miễn phí — sau này **không đổi sang có phí được** |
+| Cam kết | Tích cả hai ô |
 
-## Bước 6 — Hoàn thành mục *Thiết lập ứng dụng / Set up your app*
+## Bước 6 — Thiết lập ứng dụng / Set up your app (trên Dashboard)
 
-Mở *Bảng điều khiển / Dashboard*, rồi làm lần lượt từng mục:
-
-1. **Chính sách quyền riêng tư / Privacy policy:** dán `https://hdhvhit123.github.io/Idolchat/privacy/`.
-2. **Quyền truy cập ứng dụng / App access:** chọn *Mọi chức năng đều dùng được mà không cần quyền truy cập đặc biệt* (app không có đăng nhập).
-3. **Quảng cáo / Ads:** *Không, ứng dụng không chứa quảng cáo*.
-4. **Mức phân loại nội dung / Content rating:** điền bảng hỏi IARC.
-   - Email: email liên hệ của bạn.
-   - Danh mục: *Tất cả các loại khác / All other app types*.
-   - Bạo lực, tình dục, ngôn từ thô tục, chất cấm, cờ bạc: **Không**.
-   - Câu hỏi về người dùng tương tác hoặc trao đổi nội dung với nhau: **Không**. App không có chat thật giữa người dùng; chia sẻ ảnh chỉ đi qua bảng chia sẻ của Android.
-5. **Đối tượng mục tiêu / Target audience:**
-   - Chọn **13–15, 16–17, 18+**.
-   - **Không chọn dưới 13** để tránh chương trình Gia đình (Families), vốn có yêu cầu khắt khe hơn.
-6. **Ứng dụng tin tức / News apps:** Không.
-7. **An toàn dữ liệu / Data safety:**
-   - *Ứng dụng có thu thập hoặc chia sẻ dữ liệu người dùng không?* → **Không**.
-   - Lý do: app không có quyền Internet, không có SDK quảng cáo hay phân tích, dữ liệu chỉ nằm trên máy. Theo hướng dẫn của Google, dữ liệu chỉ xử lý trên thiết bị và không gửi đi thì không tính là "thu thập".
-8. **Các mục còn lại:** Ứng dụng chính phủ, Tính năng tài chính, Ứng dụng sức khỏe → đều chọn Không / Không áp dụng.
-9. **Danh mục ứng dụng và thông tin liên hệ / App category & contact details:**
-   - Danh mục: **Giải trí (Entertainment)**.
-   - Email liên hệ công khai.
-   - Trang web (không bắt buộc): `https://hdhvhit123.github.io/Idolchat/`.
+1. **Chính sách quyền riêng tư:** `https://hdhvhit123.github.io/Idolchat/privacy/`
+2. **Quyền truy cập ứng dụng:** Mọi chức năng dùng được mà không cần quyền truy cập đặc biệt (app không có đăng nhập).
+3. **Quảng cáo:** Không.
+   - Nếu sau này gắn AdMob: chọn Có, đồng thời sửa chính sách và mục An toàn dữ liệu.
+4. **Mức phân loại nội dung (IARC):**
+   - Danh mục: *Tất cả các loại khác*.
+   - Bạo lực, tình dục, ngôn từ thô tục, chất cấm, cờ bạc: Không.
+   - Người dùng tương tác hoặc trao đổi nội dung với nhau: Không.
+5. **Đối tượng mục tiêu:** chọn 13–15, 16–17, 18+. **Không** chọn dưới 13.
+6. **Ứng dụng tin tức:** Không.
+7. **An toàn dữ liệu:** *Ứng dụng có thu thập hoặc chia sẻ dữ liệu người dùng?* → **Không**.
+   - Lý do: app không có quyền Internet, không có SDK bên thứ ba thu dữ liệu, dữ liệu chỉ nằm trên máy.
+8. **Ứng dụng chính phủ / Tính năng tài chính / Sức khỏe:** Không.
+9. **Danh mục:** Giải trí (Entertainment).
+   - Email liên hệ.
+   - Website: `https://hdhvhit123.github.io/Idolchat/` (không bắt buộc).
 
 ## Bước 7 — Trang thông tin chính / Main store listing
 
-Mở *Phát triển số người dùng → Trang thông tin trong cửa hàng → Trang thông tin chính* (*Grow → Store presence → Main store listing*):
+| Ô | en-US (mặc định) | vi-VN (bản dịch) |
+|---|---|---|
+| Tên, mô tả ngắn, mô tả đầy đủ | `en/store-listing-en.md` | `store-listing-vi.md` |
+| Biểu tượng 512×512 | `icon_512.png` | (dùng chung) |
+| Hình ảnh nổi bật 1024×500 | `en/feature_1024x500.png` | `feature_1024x500.png` |
+| Ảnh chụp màn hình điện thoại | `en/01…07.png` | `01…07.png` |
 
-| Ô | Lấy từ |
-|---|---|
-| Tên ứng dụng (≤30) | `store-listing-vi.md` → `Idol Chat Maker: Tạo chat idol` |
-| Mô tả ngắn (≤80) | `store-listing-vi.md` |
-| Mô tả đầy đủ (≤4000) | `store-listing-vi.md` |
-| Biểu tượng ứng dụng | `play-store/icon_512.png` |
-| Hình ảnh nổi bật | `play-store/feature_1024x500.png` |
-| Ảnh chụp màn hình điện thoại | `play-store/01_studio.png` … `07_characters.png`, đăng theo đúng thứ tự |
-| Ảnh máy tính bảng | Bỏ trống — app chưa tối ưu cho máy tính bảng |
+- Bản tiếng Việt: *Quản lý bản dịch → Thêm bản dịch của riêng bạn → Tiếng Việt*.
+- Các ngôn ngữ khác (zh, ko, ja, hi…) có thể thêm sau. Người dùng các nước đó sẽ thấy trang tiếng Anh, nhưng app vẫn hiện đúng ngôn ngữ máy của họ.
+- Mô tả tiếng Việt và tiếng Anh đã ghi app có 12 ngôn ngữ.
+- ⚠ Ảnh trong `en/` vẫn chụp giao diện tiếng Việt (chụp trước khi có bản đa ngôn ngữ) → nên chụp lại bằng giao diện tiếng Anh trước khi nộp. CI đã có ảnh theo từng ngôn ngữ ở nhánh `ci-screenshots-locales`.
 
-**Thêm tiếng Anh:**
-1. Bấm *Quản lý bản dịch → Thêm bản dịch của riêng bạn* (*Manage translations → Add your own translations*).
-2. Chọn **English (United States) – en-US**.
-3. Dán nội dung từ `play-store/en/store-listing-en.md`.
-4. Tải ảnh từ `play-store/en/` lên.
+## Bước 8 — Thử nhanh (khuyên làm, không bắt buộc)
 
-## Bước 8 — Thử nghiệm nội bộ, rồi thử nghiệm kín (bắt buộc với tài khoản cá nhân)
+1. Mở *Kiểm thử → Thử nghiệm nội bộ → Tạo bản phát hành mới*.
+2. Lần tải đầu tiên, Console hỏi về **Play App Signing** → chọn **Để Google quản lý và bảo vệ khóa ký ứng dụng**.
+3. Tải `app-release.aab` lên, ghi chú phát hành, lưu và phát hành.
+4. Ở tab *Người thử nghiệm*, thêm email của bạn. Mở link mời trên điện thoại để cài từ CH Play.
+5. Kiểm tra app mở được, đổi ngôn ngữ máy thì app đổi theo, xuất ảnh được.
 
-**8a. Thử nghiệm nội bộ / Internal testing** — không bắt buộc nhưng nên làm để thử nhanh, bản cài được trong vài phút.
-1. Vào *Kiểm thử → Thử nghiệm nội bộ → Tạo bản phát hành mới*.
-2. Lần đầu, Console hỏi về **Play App Signing**. Chọn **Để Google quản lý và bảo vệ khóa ký ứng dụng (khuyên dùng)**. Google giữ khóa ký thật; bạn chỉ giữ khóa tải lên ở Bước 2.
-3. Tải `app-release.aab` lên. Tên bản phát hành để mặc định `1 (1.0.0)`.
-4. Điền ghi chú phát hành, lấy từ phần "Ghi chú phát hành" trong `store-listing-vi.md`.
-5. Ở tab *Người thử nghiệm*, thêm email của bạn. Mở đường link mời bằng điện thoại để cài từ CH Play.
-
-**8b. Thử nghiệm kín / Closed testing — ít nhất 12 người, 14 ngày liên tục**
-1. Vào *Kiểm thử → Thử nghiệm kín → Tạo bản thử nghiệm*, hoặc dùng sẵn kênh *Alpha*.
-2. Thêm người thử nghiệm bằng danh sách email hoặc một Google Group.
-   - Nên mời khoảng 15–20 người để có dư.
-   - Người thử phải dùng tài khoản Google trên điện thoại Android.
-3. Tải lên đúng AAB đó (hoặc bản mới hơn với `versionCode` cao hơn), chọn quốc gia, rồi **Gửi để xem xét**.
-4. Khi Google duyệt xong, gửi **đường link tham gia (opt-in)** cho người thử. Họ phải:
-   - mở link, bấm *Trở thành người thử nghiệm*;
-   - cài app từ CH Play;
-   - **giữ trạng thái tham gia suốt 14 ngày** và thỉnh thoảng mở app dùng thật. Google xem cả mức độ tương tác.
-5. Không tạm dừng kênh thử nghiệm trong 14 ngày đó.
-6. Sau 14 ngày, trên Dashboard bấm **Đăng ký quyền phát hành chính thức / Apply for production**. Trả lời bảng hỏi về:
-   - cách bạn tuyển người thử nghiệm;
-   - phản hồi họ đưa ra;
-   - những gì bạn đã sửa;
-   - vì sao app đã sẵn sàng.
-   Google thường trả lời trong khoảng 7 ngày.
+Bước này chỉ mất vài phút đến vài giờ, giúp phát hiện lỗi ký hay lỗi bản release trước khi lên chính thức.
 
 ## Bước 9 — Phát hành chính thức / Production
 
-1. Vào *Phát hành chính thức → Tạo bản phát hành mới*. Chọn lại AAB đã thử (*Thêm từ thư viện*) hoặc tải bản mới.
-2. Ở tab *Quốc gia/khu vực*, chọn **Việt Nam**, và thêm các nước khác nếu muốn. Muốn bán khắp nơi thì chọn tất cả.
-3. Có thể phát hành theo **tỷ lệ phần trăm (staged rollout)**, ví dụ 20%, để theo dõi lỗi trước khi mở cho tất cả.
-4. Vào *Tổng quan về bản phát hành → Gửi thay đổi để xem xét*.
-5. Lần đầu Google duyệt thường mất **vài ngày, có khi đến 7 ngày**. Khi duyệt xong, app hiện trên CH Play sau vài giờ.
+Tài khoản 2017 không phải chờ 14 ngày thử nghiệm kín.
+
+1. Mở *Phát hành chính thức → Tạo bản phát hành mới*.
+2. Chọn AAB: *Thêm từ thư viện* (bản đã thử ở Bước 8) hoặc tải lên mới.
+3. Viết ghi chú phát hành cho en-US và vi-VN.
+4. Tab *Quốc gia/khu vực*: chọn các nước muốn phát hành. App có 12 ngôn ngữ nên có thể chọn tất cả.
+5. Có thể phát hành dần (*staged rollout*), ví dụ 20% rồi tăng dần.
+6. Mở *Tổng quan về bản phát hành → Gửi thay đổi để xem xét*.
+7. Chờ Google duyệt: lần đầu thường vài ngày, có khi đến 7 ngày. Theo dõi email và Hộp thư trong Console.
 
 ## Bước 10 — Cập nhật sau này
 
-1. Sửa code.
-2. **Tăng `versionCode`** và đổi `versionName`.
-3. Chạy `.\gradlew.bat :app:bundleRelease`.
-4. Lên Console, tạo bản phát hành mới ở kênh Phát hành chính thức (hoặc thử ở kênh nội bộ trước), tải AAB lên, viết ghi chú, rồi gửi xem xét.
+Sửa code → tăng `versionCode` → `bundleRelease` → tạo bản phát hành mới ở kênh chính thức → gửi xem xét.
 
-Bản cập nhật **không** phải chạy lại 14 ngày thử nghiệm kín.
+## ⚠ Rủi ro bị từ chối nên xử lý trước
 
----
+1. **Tên thương hiệu:** tên ba phong cách "Lysn Bubble", "Weverse DM", "Instagram DM" hiện trong app, ảnh xuất và ảnh cửa hàng. Có thể bị từ chối theo chính sách Mạo danh / Sở hữu trí tuệ.
+2. **Tên người thật:** truyện mẫu tự tạo dùng "Minho (Bias)", "Hyunjin", trùng tên thành viên nhóm nhạc có thật.
+3. **Nội dung cửa hàng khớp với app:** chụp lại ảnh tiếng Anh như ghi ở Bước 7.
 
-## ⚠ Rủi ro bị từ chối nên xử lý trước khi nộp
-
-1. **Tên thương hiệu trong app:**
-   - Ba phong cách đang tên "Lysn Bubble", "Weverse DM", "Instagram DM".
-   - Các tên này hiện trong app, trên ảnh xuất ra và trong 5/7 ảnh màn hình.
-   - Google có thể từ chối theo chính sách *Mạo danh* và *Sở hữu trí tuệ*. Khi đó cần đổi tên rồi chụp lại ảnh (script đã có sẵn).
-2. **Tên người thật trong truyện mẫu:**
-   - Truyện mẫu tự tạo khi mở app lần đầu dùng "Minho (Bias)" và "Hyunjin", trùng tên thành viên nhóm nhạc có thật.
-   - Nên đổi sang "Idol", "Thành viên" như các mẫu khác.
-3. **Ảnh màn hình phải đúng với app.** Giao diện app đang là tiếng Việt; trong mô tả tiếng Anh đã ghi rõ điều này.
-4. **Email liên hệ phải nhận được thư.** Google gửi thông báo duyệt và cảnh báo chính sách qua email này.
-
-## Lỗi thường gặp khi tải lên
+## Lỗi thường gặp
 
 | Thông báo | Cách xử lý |
 |---|---|
-| *You uploaded an APK or Android App Bundle that was signed in debug mode* | Chưa làm Bước 3 |
+| *signed in debug mode* | Chưa làm Bước 3 |
 | *Version code 1 has already been used* | Tăng `versionCode` |
-| *Your app must target API level 36 or higher* | Dự án đã ở 36, không cần làm gì |
-| *The Android App Bundle was not signed* / sai khóa | Ký bằng đúng khóa tải lên đã đăng ký ở lần đầu |
-| Thiếu mục Data safety hoặc Content rating | Làm đủ các mục ở Bước 6 (Dashboard có dấu tích) |
+| *You need to verify your identity* / không bấm được Gửi xem xét | Hoàn tất xác minh ở Bước 1 |
+| *The Android App Bundle was signed with the wrong key* | Dùng đúng khóa tải lên đã dùng lần đầu |
+| Dashboard còn mục chưa tích | Làm đủ Bước 6 |
 
-## Nguồn tham khảo
+## Nguồn
 - Yêu cầu target API: https://support.google.com/googleplay/android-developer/answer/11926878
-- Yêu cầu thử nghiệm kín cho tài khoản cá nhân mới: https://support.google.com/googleplay/android-developer/answer/14151465
+- Thử nghiệm kín chỉ bắt buộc với tài khoản cá nhân tạo sau 13/11/2023: https://support.google.com/googleplay/android-developer/answer/14151465
 - Play App Signing: https://support.google.com/googleplay/android-developer/answer/9842756

@@ -46,6 +46,9 @@ Chưa biết viết gì? Chọn một mẫu có sẵn như “Chúc ngủ ngon�
 • Không xin quyền Internet, không xin quyền bộ nhớ
 • Kịch bản và ảnh chỉ nằm trên máy bạn
 
+🌏 12 NGÔN NGỮ
+Tiếng Việt, English, 中文 (giản thể và phồn thể), 한국어, 日本語, हिन्दी, ไทย, Bahasa Indonesia, Español, Português, Français — app tự hiển thị theo ngôn ngữ điện thoại.
+
 Lưu ý: Idol Chat Maker là công cụ sáng tác truyện hư cấu dành cho người hâm mộ. Ứng dụng không kèm hình ảnh hay tên của bất kỳ nghệ sĩ nào và không liên kết với nghệ sĩ, công ty giải trí hay nền tảng mạng xã hội nào. Bạn tự chịu trách nhiệm về nội dung mình tạo ra; vui lòng không dùng ứng dụng để giả mạo hay gây hiểu lầm về người thật.
 
 ## Ghi chú phát hành (bản đầu tiên)

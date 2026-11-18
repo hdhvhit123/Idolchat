@@ -48,7 +48,7 @@ Not sure where to begin? Pick a ready-made story such as “Good night”, “Af
 
 Note: Idol Chat Maker is a fan-fiction creation tool. It ships no images or real names of any artist and is not affiliated with any artist, entertainment company or social platform. You are responsible for the content you create; please do not use the app to impersonate or mislead about real people.
 
-The app interface is currently in Vietnamese.
+🌏 Available in 12 languages: English, Tiếng Việt, 简体中文, 繁體中文, 한국어, 日本語, हिन्दी, ไทย, Bahasa Indonesia, Español, Português and Français. The app follows your phone’s language.
 
 ## Release notes (first version)
 First release: build chats in 3 styles, Tap-to-Chat replay, voice messages, narration, ready-made templates and long-image export.
